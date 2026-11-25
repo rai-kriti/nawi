@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Instruments Registry — WeighCert{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header & Actions -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-primary tracking-tight">Instruments Registry</h1>
+      <p class="text-xs text-on-surface-variant mt-1">
+        Inventory of Non-Automatic Weighing Instruments registered for statutory verification under OIML R 76
+      </p>
+    </div>
+
+    {% if user.profile.is_inspector %}
+    <a href="{% url 'instrument_create' %}" class="flex items-center gap-2 bg-primary hover:bg-[#152a50] text-white text-sm font-bold px-4 py-2 rounded shadow-sm transition-colors self-start sm:self-auto">
+      <span class="material-symbols-outlined text-[18px]">add_circle</span>
+      <span>+ Register New Scale</span>
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="bg-surface-container-lowest p-4 rounded-lg border border-outline shadow-sm">
+    <form method="GET" class="flex flex-wrap items-center gap-3">
+      <div class="flex-1 min-w-[240px] relative">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+          <span class="material-symbols-outlined text-[18px]">search</span>
+        </span>
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by Serial Number, Make, Model, or Owner..."
+          class="w-full bg-surface-container-low border border-outline text-on-surface pl-10 pr-3 py-1.5 rounded text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white"/>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <label class="text-xs text-on-surface-variant font-semibold">Class:</label>
+        <select name="class" class="bg-surface-container-low border border-outline text-xs rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary">
+          <option value="">All Classes</option>
+          <option value="I" {% if cls_filter == 'I' %}selected{% endif %}>Class I</option>
+          <option value="II" {% if cls_filter == 'II' %}selected{% endif %}>Class II</option>
+          <option value="III" {% if cls_filter == 'III' %}selected{% endif %}>Class III</option>
+          <option value="IIII" {% if cls_filter == 'IIII' %}selected{% endif %}>Class IIII</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <label class="text-xs text-on-surface-variant font-semibold">Status:</label>
+        <select name="status" class="bg-surface-container-low border border-outline text-xs rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary">
+          <option value="">All Statuses</option>
+          <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+          <option value="decommissioned" {% if status_filter == 'decommissioned' %}selected{% endif %}>Decommissioned</option>
+        </select>
+      </div>
+
+      <button type="submit" class="bg-primary text-white text-xs font-bold px-3 py-1.5 rounded hover:bg-[#152a50]">
+        Filter
+      </button>
+      {% if query or cls_filter or status_filter %}
+      <a href="{% url 'instrument_list' %}" class="text-xs text-on-surface-variant hover:underline">Reset</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Instruments Table -->
+  <div class="bg-surface-container-lowest rounded-lg border border-outline overflow-hidden shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-primary text-white font-semibold">
+          <tr>
+            <th class="py-2.5 px-4">Instrument ID</th>
+            <th class="py-2.5 px-4">Make & Model</th>
+            <th class="py-2.5 px-4">Owner / Trader</th>
+            <th class="py-2.5 px-4">Serial Number</th>
+            <th class="py-2.5 px-4">Class</th>
+            <th class="py-2.5 px-4">Capacity (Max / e / d)</th>
+            <th class="py-2.5 px-4">Status</th>
+            <th class="py-2.5 px-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline">
+          {% for inst in instruments %}
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="py-3 px-4 font-mono font-bold text-primary">
+              <a href="{% url 'instrument_detail' instrument_id=inst.instrument_id %}" class="hover:underline">
+                {{ inst.instrument_id }}
+              </a>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-on-surface">{{ inst.manufacturer }}</div>
+              <div class="text-[11px] text-on-surface-variant">{{ inst.model|default:"Standard Weighing Scale" }}</div>
+            </td>
+            <td class="py-3 px-4 font-medium">{{ inst.owner.name }}</td>
+            <td class="py-3 px-4 font-mono font-bold">{{ inst.serial_number }}</td>
+            <td class="py-3 px-4">
+              <span class="bg-surface-container-high px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                Class {{ inst.accuracy_class }}
+              </span>
+            </td>
+            <td class="py-3 px-4 font-mono">
+              <div>Max: {{ inst.max_display }}</div>
+              <div class="text-[11px] text-on-surface-variant">e={{ inst.e_display }}, d={{ inst.d_display }}</div>
+              {% if inst.is_multi_interval %}
+              <div class="text-[10px] text-primary font-bold">Multi-Interval ({{ inst.ranges.count }} ranges)</div>
+              {% endif %}
+            </td>
+            <td class="py-3 px-4">
+              {% if inst.status == 'active' %}
+              <span class="inline-flex items-center gap-1 text-secondary font-bold">
+                <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                <span>Active</span>
+              </span>
+              {% else %}
+              <span class="inline-flex items-center gap-1 text-slate-400 font-bold">
+                <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                <span>Decommissioned</span>
+              </span>
+              {% endif %}
+            </td>
+            <td class="py-3 px-4 text-right whitespace-nowrap space-x-2">
+              <a href="{% url 'instrument_detail' instrument_id=inst.instrument_id %}" class="text-primary hover:underline font-bold inline-flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-[14px]">visibility</span>
+                <span>Details</span>
+              </a>
+              {% if user.profile.is_inspector %}
+              <span class="text-slate-300">|</span>
+              <a href="{% url 'wizard_start' %}?instrument={{ inst.instrument_id }}" class="text-secondary hover:underline font-bold inline-flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-[14px]">play_circle</span>
+                <span>Test</span>
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="py-8 text-center text-on-surface-variant">
+              No instruments match the selected search criteria.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Step 4: Repeatability — Test #{{ session.id }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+  {% include "inspections/wizard_nav.html" with session=session step=step %}
+
+  <form method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {% csrf_token %}
+
+    <div class="lg:col-span-2 space-y-6">
+
+      <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-outline pb-2">
+          <h2 class="text-sm font-bold text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">replay</span>
+            <span>Step 4: Repeatability Test [Clause 3.6.1, A.4.10]</span>
+          </h2>
+          <span class="text-xs bg-primary text-white px-2 py-0.5 rounded font-bold">
+            {{ rep_test.required_count }} Cycles (Class {{ instrument.accuracy_class }})
+          </span>
+        </div>
+
+        <p class="text-xs text-on-surface-variant leading-relaxed">
+          The difference between the results of several weighings of the same load must not exceed the absolute $MPE$ for that load [3.6.1].
+          At verification, one series at approximately <strong>0.8 Max</strong> is performed ({{ rep_test.required_count }} weighings).
+        </p>
+
+        <!-- Test Load Input -->
+        <div class="bg-surface-container-low p-4 rounded-lg border border-outline flex items-center justify-between">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Applied Constant Test Load (g) [~0.8 Max] <span class="text-error">*</span></label>
+            <input type="number" step="any" name="load_g" value="{{ rep_test.load_g }}" required {% if not can_edit %}readonly{% endif %}
+              class="w-40 bg-white border border-outline rounded px-3 py-1.5 text-sm font-mono focus:ring-2 focus:ring-primary"/>
+          </div>
+          <div class="text-right text-xs text-on-surface-variant">
+            <div>Spread Limit: <strong class="font-mono text-on-surface">±{{ rep_test.spread_limit }} g</strong></div>
+            <div>Allowed Spread: $\le |MPE|$</div>
+          </div>
+        </div>
+
+        <!-- Readings Cycles -->
+        <div class="space-y-2">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-primary text-white font-semibold">
+                <tr>
+                  <th class="py-2 px-3">Weighing Cycle</th>
+                  <th class="py-2 px-3">Indication $I$ (g)</th>
+                  <th class="py-2 px-3">$\Delta L$ (g)</th>
+                  <th class="py-2 px-3 text-right">Computed Error $E_c$ (g)</th>
+                  <th class="py-2 px-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline">
+                {% for seq in count_range %}
+                <tr class="hover:bg-surface-container-low">
+                  <td class="py-2.5 px-3 font-mono font-bold">Cycle #{{ seq }}</td>
+                  <td class="py-2.5 px-3">
+                    <input type="number" step="any" name="ind_{{ seq }}" required {% if not can_edit %}readonly{% endif %}
+                      value="{% for r in readings %}{% if r.sequence == seq %}{{ r.indication }}{% endif %}{% endfor %}"
+                      class="w-28 bg-white border border-outline rounded px-2 py-1 font-mono text-xs"/>
+                  </td>
+                  <td class="py-2.5 px-3">
+                    <input type="number" step="any" name="dl_{{ seq }}" placeholder="extra weights" {% if not can_edit %}readonly{% endif %}
+                      value="{% for r in readings %}{% if r.sequence == seq %}{{ r.delta_l|default:'' }}{% endif %}{% endfor %}"
+                      class="w-28 bg-white border border-outline rounded px-2 py-1 font-mono text-xs"/>
+                  </td>
+                  <td class="py-2.5 px-3 text-right font-mono font-bold">
+                    {% for r in readings %}{% if r.sequence == seq %}{{ r.computed_error }} g{% endif %}{% endfor %}
+                  </td>
+                  <td class="py-2.5 px-3 text-center">
+                    {% for r in readings %}
+                      {% if r.sequence == seq %}
+                        {% include "partials/_result_chip.html" with result=r.passed %}
+                      {% endif %}
+                    {% endfor %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Computed Result Box -->
+        <div class="p-4 rounded-lg border border-outline bg-surface-container-low flex items-center justify-between">
+          <div>
+            <div class="text-xs text-on-surface-variant font-medium">Recorded Error Spread ($E_{max} - E_{min}$):</div>
+            <div class="text-xl font-bold font-mono text-primary">
+              {{ rep_test.computed_spread }} g
+            </div>
+            <div class="text-[11px] text-slate-500 font-mono mt-0.5">Statutory Limit: $\le {{ rep_test.spread_limit }} \text{ g}$</div>
+          </div>
+          <div>
+            {% include "partials/_result_chip.html" with result=rep_test.passed %}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Navigation buttons -->
+      <div class="flex items-center justify-between pt-4 border-t border-outline">
+        <a href="{% url 'wizard_step' session_id=session.id step='accuracy' %}" class="text-xs font-bold text-on-surface-variant hover:underline flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>Previous: Step 3 Accuracy</span>
+        </a>
+        {% if can_edit %}
+        <button type="submit" class="bg-primary hover:bg-[#152a50] text-white text-xs font-bold px-6 py-2.5 rounded shadow-sm inline-flex items-center gap-2">
+          <span>Save & Proceed to Step 5: Eccentricity</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </button>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right Side Info -->
+    <div class="space-y-4">
+      <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm sticky top-6 space-y-3 text-xs">
+        <h3 class="font-bold text-primary uppercase tracking-wide border-b border-outline pb-2">Statutory Criteria</h3>
+        <p class="leading-relaxed text-on-surface-variant">
+          <strong>OIML R 76-1 [3.6.1]:</strong><br/>
+          The difference between the results of several weighings of the same load must not exceed the absolute MPE for that load.
+        </p>
+        <p class="leading-relaxed text-on-surface-variant">
+          <strong>Clause [A.4.10]:</strong><br/>
+          • Classes I & II: 6 weighings<br/>
+          • Classes III & IIII: 3 weighings
+        </p>
+      </div>
+    </div>
+
+  </form>
+
+</div>
+{% endblock %}
+

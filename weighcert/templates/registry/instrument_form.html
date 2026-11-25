@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_create %}Register Scale{% else %}Edit Scale{% endif %} — WeighCert{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+  <div class="flex items-center justify-between border-b border-outline pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-primary tracking-tight">
+        {% if is_create %}Register New Non-Automatic Weighing Instrument{% else %}Edit Instrument Specifications{% endif %}
+      </h1>
+      <p class="text-xs text-on-surface-variant mt-1">
+        Statutory metrological characteristics, capacity ratings, and compliance checks (OIML R 76-1)
+      </p>
+    </div>
+    <a href="{% url 'instrument_list' %}" class="text-xs font-bold text-on-surface-variant hover:text-primary flex items-center gap-1">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+      <span>Back to Registry</span>
+    </a>
+  </div>
+
+  <form method="POST" id="instrument-form" class="space-y-6">
+    {% csrf_token %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Left 2 Cols: Form Sections -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- 1. Identity & Owner -->
+        <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm space-y-4">
+          <h2 class="text-sm font-bold text-primary flex items-center gap-2 border-b border-outline pb-2">
+            <span class="material-symbols-outlined text-[18px]">badge</span>
+            <span>1. Instrument Identity & Owner</span>
+          </h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1">Owner / Applicant <span class="text-error">*</span></label>
+              {{ form.owner }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Manufacturer Make <span class="text-error">*</span></label>
+              {{ form.manufacturer }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Model Name / Number</label>
+              {{ form.model }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Serial Number <span class="text-error">*</span></label>
+              {{ form.serial_number }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Type Approval / OIML Certificate</label>
+              {{ form.type_approval_number }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Software Identification & Version</label>
+              {{ form.software_id }}
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Metrological Characteristics -->
+        <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm space-y-4">
+          <h2 class="text-sm font-bold text-primary flex items-center gap-2 border-b border-outline pb-2">
+            <span class="material-symbols-outlined text-[18px]">tune</span>
+            <span>2. Metrological Parameters (Stored in Grams)</span>
+          </h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1">Accuracy Class <span class="text-error">*</span></label>
+              {{ form.accuracy_class }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Display Unit</label>
+              {{ form.unit }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Maximum Capacity Max (g) <span class="text-error">*</span></label>
+              {{ form.max_capacity_g }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Minimum Capacity Min (g) <span class="text-error">*</span></label>
+              {{ form.min_capacity_g }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Verification Interval e (g) <span class="text-error">*</span></label>
+              {{ form.e_g }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Actual Scale Interval d (g) <span class="text-error">*</span></label>
+              {{ form.d_g }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Indication Type <span class="text-error">*</span></label>
+              {{ form.indication_type }}
+            </div>
+            <div class="flex items-center gap-2 pt-5">
+              {{ form.is_grading }}
+              <label class="text-xs text-on-surface font-semibold" for="id_is_grading">Grading Instrument (Min reduced to 5 e) [3.4.3]</label>
+            </div>
+          </div>
+
+          <!-- Multi-interval checkbox & subform -->
+          <div class="pt-3 border-t border-outline">
+            <div class="flex items-center gap-2 mb-3">
+              {{ form.is_multi_interval }}
+              <label class="text-xs font-bold text-primary" for="id_is_multi_interval">Multi-Interval Instrument (Multiple partial ranges) [3.3]</label>
+            </div>
+
+            <div id="multi-interval-ranges" class="space-y-3 bg-surface-container-low p-3 rounded border border-outline">
+              <span class="text-xs font-bold text-on-surface">Partial Weighing Ranges (e_{i+1} > e_i):</span>
+              {{ formset.management_form }}
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-primary text-white">
+                    <tr>
+                      <th class="py-1.5 px-2">Order</th>
+                      <th class="py-1.5 px-2">Max_i (g)</th>
+                      <th class="py-1.5 px-2">e_i (g)</th>
+                      <th class="py-1.5 px-2">d_i (g)</th>
+                      <th class="py-1.5 px-2">Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for rform in formset %}
+                    <tr class="border-b border-outline">
+                      <td class="py-1.5 px-2">{{ rform.order }}</td>
+                      <td class="py-1.5 px-2">{{ rform.max_i_g }}</td>
+                      <td class="py-1.5 px-2">{{ rform.e_i_g }}</td>
+                      <td class="py-1.5 px-2">{{ rform.d_i_g }}</td>
+                      <td class="py-1.5 px-2">{{ rform.DELETE }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Receptor & Installation -->
+        <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm space-y-4">
+          <h2 class="text-sm font-bold text-primary flex items-center gap-2 border-b border-outline pb-2">
+            <span class="material-symbols-outlined text-[18px]">location_on</span>
+            <span>3. Load Receptor & Installation Location</span>
+          </h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1">Load Receptor Type</label>
+              {{ form.load_receptor_type }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Points of Support (n)</label>
+              {{ form.points_of_support }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Place / Facility of Use</label>
+              {{ form.place_of_use }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Gravity Zone / Local Note</label>
+              {{ form.gravity_zone }}
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold mb-1">Location Address</label>
+              {{ form.location_address }}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3">
+          <a href="{% url 'instrument_list' %}" class="px-4 py-2 text-xs font-bold text-on-surface-variant hover:underline">Cancel</a>
+          <button type="submit" class="bg-primary hover:bg-[#152a50] text-white text-xs font-bold px-5 py-2.5 rounded shadow-sm">
+            {% if is_create %}Register Scale & Proceed{% else %}Save Metrology Changes{% endif %}
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Right 1 Col: Live Compliance Checklist Panel -->
+      <div class="space-y-4">
+        <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm sticky top-6 space-y-4">
+          <div class="flex items-center justify-between border-b border-outline pb-2">
+            <h3 class="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px]">verified</span>
+              <span>Live Metrology Check</span>
+            </h3>
+            <span class="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold" id="live-n-val">n = --</span>
+          </div>
+
+          <p class="text-[11px] text-on-surface-variant leading-relaxed">
+            Checks entered values dynamically against Table 3, Table 4, and Clause 3.4.2 of OIML R 76-1. Findings are advisory warnings per Section 4.4.
+          </p>
+
+          <div id="compliance-findings" class="space-y-2 text-xs">
+            <div class="p-2.5 rounded bg-surface-container-low border border-outline text-[11px] text-slate-600">
+              Type values on the left to trigger live verification against OIML R 76 reference tables.
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-outline text-[11px] text-slate-500">
+            <strong>Formula Reference:</strong><br/>
+            • $n = Max / e$<br/>
+            • $d < e \le 10d$<br/>
+            • $Min \ge \text{factor} \times d$
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </form>
+
+</div>
+
+<script>
+  function triggerLiveValidation() {
+    const cls = document.getElementById('id_accuracy_class')?.value || 'III';
+    const max_g = document.getElementById('id_max_capacity_g')?.value || '0';
+    const min_g = document.getElementById('id_min_capacity_g')?.value || '0';
+    const e_g = document.getElementById('id_e_g')?.value || '1';
+    const d_g = document.getElementById('id_d_g')?.value || '1';
+    const is_grading = document.getElementById('id_is_grading')?.checked || false;
+
+    fetch(`/instruments/api/validate/?accuracy_class=${cls}&max_capacity_g=${max_g}&min_capacity_g=${min_g}&e_g=${e_g}&d_g=${d_g}&is_grading=${is_grading}`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('live-n-val').textContent = `n = ${Math.round(data.n || 0)}`;
+        const container = document.getElementById('compliance-findings');
+        container.innerHTML = '';
+        if (!data.findings || data.findings.length === 0) {
+          container.innerHTML = `
+            <div class="p-2.5 rounded bg-green-50 border border-green-300 text-green-800 text-[11px] font-bold flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px]">check_circle</span>
+              <span>All classification limits conform to Table 3 & 3.4.2</span>
+            </div>
+          `;
+        } else {
+          data.findings.forEach(f => {
+            const el = document.createElement('div');
+            el.className = 'p-2 rounded bg-amber-50 border border-amber-300 text-amber-900 text-[11px] space-y-0.5';
+            el.innerHTML = `
+              <div class="font-bold flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px] text-amber-600">warning</span>
+                <span>${f.code} (${f.clause})</span>
+              </div>
+              <p class="text-[10px] text-amber-800">${f.message}</p>
+            `;
+            container.appendChild(el);
+          });
+        }
+      })
+      .catch(() => {});
+  }
+
+  ['id_accuracy_class', 'id_max_capacity_g', 'id_min_capacity_g', 'id_e_g', 'id_d_g', 'id_is_grading'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', triggerLiveValidation);
+    document.getElementById(id)?.addEventListener('change', triggerLiveValidation);
+  });
+  triggerLiveValidation();
+</script>
+{% endblock %}
+

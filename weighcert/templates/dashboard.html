@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — WeighCert Legal Metrology Portal{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Breadcrumb & Regulatory Strip -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div class="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
+      <span class="material-symbols-outlined text-[16px]">home</span>
+      <span>Home</span>
+      <span class="text-slate-300">/</span>
+      <span class="text-on-surface font-bold">Dashboard</span>
+    </div>
+    <div class="flex items-center gap-1.5 text-xs bg-surface-container-high px-2.5 py-1 rounded text-on-surface-variant border border-outline">
+      <span class="material-symbols-outlined text-[14px] text-secondary">verified</span>
+      <span>Statutory Authority: OIML R 76-1 / Rule 14 Legal Metrology 2011</span>
+    </div>
+  </div>
+
+  <!-- Page Title & Actions -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline pb-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-primary tracking-tight">Metrology Operations Dashboard</h1>
+        <span class="bg-primary text-white text-[11px] px-2 py-0.5 rounded font-bold uppercase">
+          {{ user.profile.get_role_display }}
+        </span>
+      </div>
+      <p class="text-xs text-on-surface-variant mt-1">
+        {{ lab_settings.lab_name|default:"Directorate of Legal Metrology" }} | Zonal Verification Station
+      </p>
+    </div>
+
+    {% if user.profile.is_inspector %}
+    <div class="flex items-center gap-3">
+      <a href="{% url 'wizard_start' %}" class="flex items-center gap-2 bg-primary hover:bg-[#152a50] text-white text-sm font-bold px-4 py-2 rounded shadow-sm transition-colors">
+        <span class="material-symbols-outlined text-[18px]">add_box</span>
+        <span>+ Start New Test (OIML R 76)</span>
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- 5 Bento Stat Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    {% include "partials/_stat_card.html" with title="Tests in Progress" value=drafts_count subtitle="Active inspection dockets" icon="schedule" border_color="bg-amber-400" icon_color="text-amber-500" %}
+    {% include "partials/_stat_card.html" with title="Awaiting Approval" value=awaiting_approval_count subtitle="Submitted to Officer" icon="fact_check" border_color="bg-primary" icon_color="text-primary" %}
+    {% include "partials/_stat_card.html" with title="Passed This Month" value=passed_month_count subtitle="Verification certificates issued" icon="check_circle" border_color="bg-secondary" icon_color="text-secondary" %}
+    {% include "partials/_stat_card.html" with title="Failed This Month" value=failed_month_count subtitle="Rejections under R 76" icon="cancel" border_color="bg-error" icon_color="text-error" %}
+    {% include "partials/_stat_card.html" with title="Weights Due (30d)" value=weights_due_30_count subtitle="Recalibration required" icon="fitness_center" border_color="bg-red-500" icon_color="text-red-500" %}
+  </div>
+
+  <!-- Environmental Check Strip -->
+  <div class="bg-surface-container-low rounded-lg p-3.5 border border-outline flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded bg-primary-container text-white flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-[20px]">thermostat</span>
+      </div>
+      <div>
+        <span class="font-bold text-on-surface uppercase tracking-wide">Laboratory Ambient Telemetry (OIML R 76-1 Sec 3.9)</span>
+        <div class="flex items-center gap-4 text-on-surface-variant mt-0.5">
+          <span>Temperature: <strong class="font-mono text-on-surface">20.4 °C</strong> (Nominal 20°C ± 2°C)</span>
+          <span>•</span>
+          <span>Relative Humidity: <strong class="font-mono text-on-surface">51.2%</strong> (Limit 30–70%)</span>
+          <span>•</span>
+          <span>Barometric Pressure: <strong class="font-mono text-on-surface">1013.1 hPa</strong></span>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 text-secondary font-bold bg-green-50 px-2 py-1 rounded border border-green-200">
+      <span class="material-symbols-outlined text-[16px]">check</span>
+      <span>Environment Within Tolerance</span>
+    </div>
+  </div>
+
+  <!-- TABLE 1: Needs Your Attention -->
+  <div class="bg-surface-container-lowest rounded-lg border border-outline overflow-hidden shadow-sm">
+    <div class="p-4 bg-surface-container-low border-b border-outline flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-amber-600 text-[20px]">pending_actions</span>
+        <div>
+          <h2 class="text-sm font-bold text-on-surface">Needs Your Attention</h2>
+          <p class="text-xs text-on-surface-variant">Dockets requiring action, re-measurement or review</p>
+        </div>
+      </div>
+      <span class="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Action Queue</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-primary text-white font-semibold">
+          <tr>
+            <th class="py-2.5 px-4">Test ID</th>
+            <th class="py-2.5 px-4">Instrument Details</th>
+            <th class="py-2.5 px-4">Owner / Applicant</th>
+            <th class="py-2.5 px-4">Inspection Remarks / Comment</th>
+            <th class="py-2.5 px-4">Status</th>
+            <th class="py-2.5 px-4 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline">
+          {% for session in attention_sessions %}
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="py-3 px-4 font-mono font-bold text-primary">#{{ session.id }}</td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-on-surface">{{ session.instrument.manufacturer }} {{ session.instrument.model }}</div>
+              <div class="text-[11px] text-on-surface-variant font-mono">Class {{ session.instrument.accuracy_class }} • SN: {{ session.instrument.serial_number }}</div>
+            </td>
+            <td class="py-3 px-4">{{ session.instrument.owner.name }}</td>
+            <td class="py-3 px-4">
+              {% if session.officer_comment %}
+              <div class="text-amber-800 bg-amber-50 p-1.5 rounded border border-amber-200">
+                <strong>Officer:</strong> {{ session.officer_comment }}
+              </div>
+              {% else %}
+              <span class="text-on-surface-variant">{{ session.remarks|default:"Testing underway..." }}</span>
+              {% endif %}
+            </td>
+            <td class="py-3 px-4">
+              {% include "partials/_status_chip.html" with status=session.status %}
+            </td>
+            <td class="py-3 px-4 text-right">
+              {% if user.profile.is_inspector and session.status != 'submitted' %}
+              <a href="{% url 'wizard_step' session_id=session.id step='conditions' %}" class="inline-flex items-center gap-1 bg-primary text-white px-2.5 py-1 rounded text-xs font-bold hover:bg-[#152a50]">
+                <span class="material-symbols-outlined text-[14px]">edit_note</span>
+                <span>Resume Wizard</span>
+              </a>
+              {% else %}
+              <a href="{% url 'test_review' session_id=session.id %}" class="inline-flex items-center gap-1 bg-primary text-white px-2.5 py-1 rounded text-xs font-bold hover:bg-[#152a50]">
+                <span class="material-symbols-outlined text-[14px]">visibility</span>
+                <span>Review Docket</span>
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="py-6 text-center text-on-surface-variant">
+              No pending dockets requiring immediate attention. All items up to date.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TABLE 2: Recent Test Reports & Verifications -->
+  <div class="bg-surface-container-lowest rounded-lg border border-outline overflow-hidden shadow-sm">
+    <div class="p-4 bg-surface-container-low border-b border-outline flex items-center justify-between">
+      <div>
+        <h2 class="text-sm font-bold text-on-surface">Recent Test Reports & Certificates</h2>
+        <p class="text-xs text-on-surface-variant">Historical audit log under OIML R 76 statutory testing</p>
+      </div>
+      <a href="{% url 'report_archive' %}" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+        <span>View Full Archive</span>
+        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+      </a>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-primary text-white font-semibold">
+          <tr>
+            <th class="py-2.5 px-4">Report No.</th>
+            <th class="py-2.5 px-4">Instrument ID & Class</th>
+            <th class="py-2.5 px-4">Make & Serial Number</th>
+            <th class="py-2.5 px-4">Verification Date</th>
+            <th class="py-2.5 px-4">Result</th>
+            <th class="py-2.5 px-4">Status</th>
+            <th class="py-2.5 px-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline">
+          {% for rep in recent_reports %}
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="py-3 px-4 font-mono font-bold text-primary">{{ rep.report_number }}{% if rep.revision > 0 %} <span class="text-xs text-slate-500">Rev {{ rep.revision }}</span>{% endif %}</td>
+            <td class="py-3 px-4">
+              <span class="font-mono font-semibold">{{ rep.session.instrument.instrument_id }}</span>
+              <span class="ml-1 bg-surface-container-high px-1.5 py-0.2 rounded text-[11px] font-bold">Class {{ rep.session.instrument.accuracy_class }}</span>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-medium text-on-surface">{{ rep.session.instrument.manufacturer }} {{ rep.session.instrument.model }}</div>
+              <div class="font-mono text-[11px] text-slate-500">SN: {{ rep.session.instrument.serial_number }}</div>
+            </td>
+            <td class="py-3 px-4 font-mono text-slate-600">{{ rep.issued_at|date:"d M Y, H:i" }}</td>
+            <td class="py-3 px-4">
+              {% include "partials/_result_chip.html" with result=rep.session.overall_result %}
+            </td>
+            <td class="py-3 px-4">
+              {% include "partials/_status_chip.html" with status=rep.status %}
+            </td>
+            <td class="py-3 px-4 text-right whitespace-nowrap space-x-2">
+              <a href="{% url 'report_preview' report_id=rep.id %}" class="text-primary hover:underline font-bold inline-flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-[14px]">visibility</span>
+                <span>View</span>
+              </a>
+              <span class="text-slate-300">|</span>
+              <a href="{% url 'report_pdf_download' report_id=rep.id %}" class="text-secondary hover:underline font-bold inline-flex items-center gap-0.5" title="Download PDF">
+                <span class="material-symbols-outlined text-[14px]">download</span>
+                <span>PDF</span>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="py-6 text-center text-on-surface-variant">
+              No issued reports yet. Create and approve a test session to generate a test certificate.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+

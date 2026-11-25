@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Step 6: Conditional Tests — Test #{{ session.id }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+  {% include "inspections/wizard_nav.html" with session=session step=step %}
+
+  <form method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {% csrf_token %}
+
+    <div class="lg:col-span-2 space-y-6">
+
+      <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline shadow-sm space-y-4">
+        <h2 class="text-sm font-bold text-primary flex items-center gap-2 border-b border-outline pb-2">
+          <span class="material-symbols-outlined text-[18px]">rule</span>
+          <span>Step 6: Conditional Metrological Tests</span>
+        </h2>
+
+        <!-- Digital Indication Note (Spec Section 4.9 & 8.3.3) -->
+        {% if is_digital %}
+        <div class="p-4 bg-slate-50 border border-slate-300 rounded-lg flex items-start gap-3 text-xs">
+          <span class="material-symbols-outlined text-primary text-[20px] mt-0.5">info</span>
+          <div class="space-y-1">
+            <span class="font-bold text-on-surface">Discrimination Test Not Applicable at Verification</span>
+            <p class="text-on-surface-variant leading-relaxed">
+              In accordance with <strong>OIML R 76-1 Clause 8.3.3</strong>, discrimination testing is <em>not applicable for instruments with digital indication</em> at verification. It applies strictly to analog and non-self-indicating instruments or type evaluation.
+            </p>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Tilt Check (Mobile Instruments) -->
+        {% if instrument.is_mobile %}
+        <div class="bg-surface-container-low p-4 rounded-lg border border-outline space-y-3">
+          <span class="text-xs font-bold text-primary flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px]">screen_rotation</span>
+            <span>Tilt Test for Mobile Instruments [Clause 4.18, A.5.1.3]</span>
+          </span>
+          <div class="flex items-center gap-2">
+            <input type="checkbox" name="tilt_passed" id="tilt_passed" {% if tilt.passed %}checked{% endif %} class="rounded"/>
+            <label for="tilt_passed" class="text-xs font-semibold">Instrument operates within tolerance when tilted to limiting tilt angle</label>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Tilt Observations / Angle Note</label>
+            <input type="text" name="tilt_note" value="{{ tilt.note }}" placeholder="Limiting tilt angle: 50/1000 (approx 2.89°)" class="w-full bg-white border border-outline rounded px-3 py-1.5 text-xs"/>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="p-3 bg-green-50 border border-green-200 rounded text-xs text-green-900 font-semibold flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary text-[18px]">check_circle</span>
+          <span>No further conditional tests required for this scale configuration.</span>
+        </div>
+      </div>
+
+      <!-- Navigation buttons -->
+      <div class="flex items-center justify-between pt-4 border-t border-outline">
+        <a href="{% url 'wizard_step' session_id=session.id step='eccentricity' %}" class="text-xs font-bold text-on-surface-variant hover:underline flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>Previous: Step 5 Eccentricity</span>
+        </a>
+        <button type="submit" class="bg-primary hover:bg-[#152a50] text-white text-xs font-bold px-6 py-2.5 rounded shadow-sm inline-flex items-center gap-2">
+          <span>Save & Proceed to Step 7: Remarks & Review</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Right Side Info -->
+    <div class="space-y-4">
+      <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm sticky top-6 space-y-3 text-xs">
+        <h3 class="font-bold text-primary uppercase tracking-wide border-b border-outline pb-2">Statutory Applicability</h3>
+        <p class="leading-relaxed text-on-surface-variant">
+          <strong>Discrimination [8.3.3]:</strong> Skipped for digital scales.<br/>
+          <strong>Sensitivity [6.1]:</strong> Non-self-indicating scales only.<br/>
+          <strong>Tilt [4.18]:</strong> Mobile scales only.
+        </p>
+      </div>
+    </div>
+
+  </form>
+
+</div>
+{% endblock %}
+

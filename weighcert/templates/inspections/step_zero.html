@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Step 2: Zero Check — Test #{{ session.id }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+  {% include "inspections/wizard_nav.html" with session=session step=step %}
+
+  <form method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {% csrf_token %}
+
+    <div class="lg:col-span-2 space-y-6">
+
+      <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-outline pb-2">
+          <h2 class="text-sm font-bold text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">adjust</span>
+            <span>Step 2: Accuracy of Zero-Setting Device [4.5.2, A.4.2.3]</span>
+          </h2>
+          <span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono font-bold">
+            Limit: ±0.25 e
+          </span>
+        </div>
+
+        <p class="text-xs text-on-surface-variant leading-relaxed">
+          The effect of zero deviation on a weighing result must not exceed <strong>±0.25 e</strong>.
+          {% if instrument.d_g > 0.2|stringformat:"f"|add:"0" %}
+          Because actual scale interval $d > 0.2e$ ({{ instrument.d_display }} vs {{ instrument.e_display }}), rounding error must be eliminated using the <strong>changeover point method</strong> [Clause 3.5.3.2].
+          {% endif %}
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-surface-container-low p-4 rounded-lg border border-outline">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Indication at Zero $I_0$ (g) <span class="text-error">*</span></label>
+            <input type="number" step="any" name="indication_zero" id="indication_zero" value="{{ zero_chk.indication_zero }}" required
+              class="w-full bg-white border border-outline rounded px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-primary"/>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold mb-1">
+              Extra Load Added $\Delta L$ (g)
+              {% if instrument.d_g > 0.2|stringformat:"f"|add:"0" %}<span class="text-error font-bold">*</span>{% endif %}
+            </label>
+            <input type="number" step="any" name="delta_l" id="delta_l" value="{{ zero_chk.delta_l|default:'' }}"
+              placeholder="Small weights added until display steps to 0 + e"
+              class="w-full bg-white border border-outline rounded px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-primary"/>
+            <span class="text-[11px] text-on-surface-variant">Recommended step: ~0.1 e</span>
+          </div>
+        </div>
+
+        <!-- Live Computed Result Preview Box -->
+        <div class="p-4 rounded-lg border border-outline bg-surface-container-lowest flex items-center justify-between">
+          <div>
+            <div class="text-xs text-on-surface-variant font-medium">Computed Error at Zero ($E_0$):</div>
+            <div class="text-xl font-bold font-mono text-primary" id="computed-e0-display">
+              {{ zero_chk.computed_e0 }} g
+            </div>
+            <div class="text-[11px] text-slate-500 font-mono mt-0.5">Formula: $P_0 = I + 0.5e - \Delta L$, $E_0 = P_0 - L_0$</div>
+          </div>
+          <div id="zero-result-chip">
+            {% include "partials/_result_chip.html" with result=zero_chk.passed %}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Navigation buttons -->
+      <div class="flex items-center justify-between pt-4 border-t border-outline">
+        <a href="{% url 'wizard_step' session_id=session.id step='conditions' %}" class="text-xs font-bold text-on-surface-variant hover:underline flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>Previous: Step 1</span>
+        </a>
+        <button type="submit" class="bg-primary hover:bg-[#152a50] text-white text-xs font-bold px-6 py-2.5 rounded shadow-sm inline-flex items-center gap-2">
+          <span>Save & Proceed to Step 3: Accuracy Test</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Right Side Info -->
+    <div class="space-y-4">
+      <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm sticky top-6 space-y-3 text-xs">
+        <h3 class="font-bold text-primary uppercase tracking-wide border-b border-outline pb-2">Statutory Criteria</h3>
+        <p class="leading-relaxed text-on-surface-variant">
+          <strong>OIML R 76-1 [4.5.2]:</strong><br/>
+          After setting to zero, the zero-setting device must ensure the zero deviation does not exceed <strong>±0.25 e</strong>.
+        </p>
+        <div class="p-3 bg-surface-container-low rounded border border-outline space-y-1 font-mono text-[11px]">
+          <div>$e = {{ instrument.e_display }}$</div>
+          <div>$0.25 \times e = \pm{{ instrument.e_g|floatformat:4 }} \times 0.25$ g</div>
+        </div>
+      </div>
+    </div>
+
+  </form>
+
+</div>
+{% endblock %}

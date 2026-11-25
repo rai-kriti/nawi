@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Start New Test — WeighCert{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+  <div class="border-b border-outline pb-4">
+    <h1 class="text-2xl font-bold text-primary tracking-tight">Initiate Statutory Verification Test</h1>
+    <p class="text-xs text-on-surface-variant mt-1">
+      Select an active weighing instrument from the registry to begin guided test docket (OIML R 76-1)
+    </p>
+  </div>
+
+  <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline shadow-sm space-y-4">
+    <h2 class="text-sm font-bold text-on-surface">Select Instrument to Test:</h2>
+
+    <div class="divide-y divide-outline border border-outline rounded-lg overflow-hidden">
+      {% for inst in instruments %}
+      <div class="p-4 hover:bg-surface-container-low transition-colors flex items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-sm text-primary">{{ inst.manufacturer }} {{ inst.model }}</span>
+            <span class="bg-surface-container-high text-xs px-2 py-0.5 rounded font-mono">{{ inst.instrument_id }}</span>
+            <span class="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Class {{ inst.accuracy_class }}</span>
+          </div>
+          <p class="text-xs text-on-surface-variant mt-1">
+            Owner: <strong>{{ inst.owner.name }}</strong> • Serial: <span class="font-mono">{{ inst.serial_number }}</span> • Max: {{ inst.max_display }} (e={{ inst.e_display }})
+          </p>
+        </div>
+        <a href="{% url 'wizard_start' %}?instrument={{ inst.instrument_id }}" class="bg-primary hover:bg-[#152a50] text-white text-xs font-bold px-4 py-2 rounded shadow-sm inline-flex items-center gap-1.5">
+          <span>Start Test</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
+      </div>
+      {% empty %}
+      <div class="p-8 text-center text-on-surface-variant text-xs">
+        No active instruments found in registry. <a href="{% url 'instrument_create' %}" class="text-primary font-bold underline">Register a scale first.</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

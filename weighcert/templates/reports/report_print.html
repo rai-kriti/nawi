@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Test Report: {{ report.report_number }} (OIML R 76-1:2006)</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 15mm 15mm 20mm 15mm;
+      @bottom-right {
+        content: "Report No. {{ report.report_number }} · Page " counter(page) " of " counter(pages);
+        font-family: 'Noto Sans', sans-serif;
+        font-size: 8pt;
+        color: #64748b;
+      }
+      @bottom-left {
+        content: "Statutory Verification Under OIML R 76-1:2006";
+        font-family: 'Noto Sans', sans-serif;
+        font-size: 8pt;
+        color: #64748b;
+      }
+    }
+    body {
+      font-family: 'Noto Sans', 'DejaVu Sans', sans-serif;
+      font-size: 8.5pt;
+      line-height: 1.35;
+      color: #0f172a;
+      margin: 0;
+      padding: 0;
+    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .font-bold { font-weight: bold; }
+    .font-mono { font-family: 'JetBrains Mono', monospace, monospace; }
+    .uppercase { text-transform: uppercase; }
+    .header-table { width: 100%; border-bottom: 2px solid #012357; padding-bottom: 8px; margin-bottom: 12px; }
+    .tricolor { height: 3px; width: 100%; margin-bottom: 6px; }
+    .tricolor-saffron { height: 1px; background-color: #FF9933; }
+    .tricolor-white { height: 1px; background-color: #FFFFFF; }
+    .tricolor-green { height: 1px; background-color: #138808; }
+    .title-en { font-size: 13pt; font-weight: bold; color: #012357; }
+    .title-hi { font-size: 9.5pt; color: #012357; }
+    .section-title { font-size: 9pt; font-weight: bold; color: #012357; background-color: #f1f5f9; padding: 3px 6px; border-left: 3px solid #012357; margin-top: 10px; margin-bottom: 5px; }
+    table.data-table { width: 100%; border-collapse: collapse; margin-top: 4px; margin-bottom: 8px; }
+    table.data-table th, table.data-table td { border: 0.5pt solid #cbd5e1; padding: 3.5px 5px; font-size: 7.5pt; }
+    table.data-table th { background-color: #012357; color: #ffffff; font-weight: bold; }
+    .banner-pass { background-color: #dcfce7; color: #166534; border: 1.5pt solid #86efac; padding: 6px; text-align: center; font-size: 11pt; font-weight: bold; margin: 8px 0; }
+    .banner-fail { background-color: #fee2e2; color: #991b1b; border: 1.5pt solid #fca5a5; padding: 6px; text-align: center; font-size: 11pt; font-weight: bold; margin: 8px 0; }
+    .qr-img { width: 75px; height: 75px; }
+    .footer-note { font-size: 7.5pt; color: #475569; border-top: 0.5pt solid #cbd5e1; padding-top: 6px; margin-top: 12px; }
+    .signature-box { width: 48%; display: inline-block; vertical-align: top; margin-top: 15px; }
+  </style>
+</head>
+<body>
+
+  <!-- Tricolor bar -->
+  <div class="tricolor">
+    <div class="tricolor-saffron"></div>
+    <div class="tricolor-white"></div>
+    <div class="tricolor-green"></div>
+  </div>
+
+  <!-- Header -->
+  <table class="header-table">
+    <tr>
+      <td style="width: 70px;">
+        <div style="width: 55px; height: 55px; border-radius: 50%; border: 1.5pt solid #012357; text-align: center; line-height: 55px; font-weight: bold; color: #012357; font-size: 16pt;">
+          LM
+        </div>
+      </td>
+      <td>
+        <div class="title-hi">भारत सरकार / विधिक माप विज्ञान प्रभाग</div>
+        <div class="title-en">Directorate of Legal Metrology, Government of India</div>
+        <div style="font-size: 8pt; color: #475569;">Central Testing Laboratory • OIML R 76-1:2006 (E) Test Report</div>
+      </td>
+      <td class="text-right" style="width: 90px;">
+        {% if qr_code_b64 %}
+        <img src="{{ qr_code_b64 }}" class="qr-img" alt="QR Code"/>
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+
+  <!-- Report Metadata Strip -->
+  <table style="width: 100%; background-color: #f8fafc; border: 0.5pt solid #cbd5e1; margin-bottom: 8px; padding: 4px;">
+    <tr>
+      <td style="font-size: 8pt;"><strong>Report Number:</strong> <span class="font-mono">{{ report.report_number }}</span> {% if report.revision > 0 %}(Rev {{ report.revision }}){% endif %}</td>
+      <td style="font-size: 8pt;"><strong>Issue Date:</strong> {{ report.issued_at|date:"d F Y" }}</td>
+      <td style="font-size: 8pt;"><strong>Verification Type:</strong> {{ session.get_inspection_type_display }}</td>
+    </tr>
+  </table>
+
+  <!-- 1. Owner & Instrument Details -->
+  <div class="section-title">1. APPLICANT (OWNER) & INSTRUMENT SPECIFICATIONS</div>
+  <table class="data-table">
+    <tr>
+      <td style="width: 20%; background-color: #f8fafc;"><strong>Owner / Applicant:</strong></td>
+      <td style="width: 30%;">{{ owner.name }}</td>
+      <td style="width: 20%; background-color: #f8fafc;"><strong>Manufacturer / Make:</strong></td>
+      <td style="width: 30%;">{{ instrument.manufacturer }}</td>
+    </tr>
+    <tr>
+      <td style="background-color: #f8fafc;"><strong>Facility / Place:</strong></td>
+      <td>{{ instrument.place_of_use|default:"Place of Use" }}</td>
+      <td style="background-color: #f8fafc;"><strong>Model & Serial Number:</strong></td>
+      <td>{{ instrument.model }} (SN: <span class="font-mono font-bold">{{ instrument.serial_number }}</span>)</td>
+    </tr>
+    <tr>
+      <td style="background-color: #f8fafc;"><strong>Accuracy Class:</strong></td>
+      <td><strong>Class {{ instrument.accuracy_class }}</strong></td>
+      <td style="background-color: #f8fafc;"><strong>Capacity Max / Min:</strong></td>
+      <td class="font-mono">{{ instrument.max_display }} / {{ instrument.min_display }}</td>
+    </tr>
+    <tr>
+      <td style="background-color: #f8fafc;"><strong>Scale Intervals (e / d):</strong></td>
+      <td class="font-mono">e = {{ instrument.e_display }} | d = {{ instrument.d_display }}</td>
+      <td style="background-color: #f8fafc;"><strong>Verification Resolution (n):</strong></td>
+      <td class="font-mono">{{ instrument.n|floatformat:0 }} intervals</td>
+    </tr>
+    <tr>
+      <td style="background-color: #f8fafc;"><strong>Indication & Receptor:</strong></td>
+      <td>{{ instrument.get_indication_type_display }} • {{ instrument.get_load_receptor_type_display }}</td>
+      <td style="background-color: #f8fafc;"><strong>Type Approval No.:</strong></td>
+      <td class="font-mono">{{ instrument.type_approval_number|default:"N/A" }}</td>
+    </tr>
+  </table>
+
+  <!-- 2. Standard Weights Used -->
+  <div class="section-title">2. TEST STANDARDS USED (OIML R 111 Traceable)</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Standard ID</th>
+        <th>Nominal Mass</th>
+        <th>Class</th>
+        <th>Certificate Number</th>
+        <th>Correction</th>
+        <th>Uncertainty U</th>
+        <th>Calibration Due</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sw in weights %}
+      <tr>
+        <td class="font-mono font-bold">{{ sw.weight.label_id }}</td>
+        <td class="font-mono">{{ sw.weight.nominal_mass_g }} g</td>
+        <td class="text-center font-bold">Class {{ sw.weight.oiml_class }}</td>
+        <td class="font-mono">{{ sw.weight.certificate_number }}</td>
+        <td class="font-mono">{% if sw.weight.certified_correction_g >= 0 %}+{% endif %}{{ sw.weight.certified_correction_g }} g</td>
+        <td class="font-mono">±{{ sw.weight.expanded_uncertainty_g }} g</td>
+        <td class="font-mono">{{ sw.weight.calibration_due_date|date:"d M Y" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-center">No standard weights listed.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- 3. Zero Check & Repeatability -->
+  <table style="width: 100%;">
+    <tr>
+      <td style="width: 49%; vertical-align: top;">
+        <div class="section-title">3. ZERO CHECK ($E_0$) [4.5.2]</div>
+        <table class="data-table">
+          <tr><td style="width: 60%;">Indication at Zero ($I_0$):</td><td class="font-mono">{{ zero_check.indication_zero }} g</td></tr>
+          <tr><td>Extra Load ($\Delta L$):</td><td class="font-mono">{{ zero_check.delta_l|default:"0" }} g</td></tr>
+          <tr><td>Error at Zero ($E_0$):</td><td class="font-mono font-bold">{{ zero_check.computed_e0 }} g</td></tr>
+          <tr><td>Statutory Limit (±0.25 e):</td><td class="font-mono">±0.25 e</td></tr>
+          <tr><td>Result:</td><td class="font-bold">{% if zero_check.passed %}PASS{% else %}FAIL{% endif %}</td></tr>
+        </table>
+      </td>
+      <td style="width: 2%;"></td>
+      <td style="width: 49%; vertical-align: top;">
+        <div class="section-title">4. REPEATABILITY [3.6.1]</div>
+        <table class="data-table">
+          <tr><td style="width: 60%;">Constant Load (~0.8 Max):</td><td class="font-mono">{{ repeatability.load_g }} g</td></tr>
+          <tr><td>Cycles Performed:</td><td class="font-mono">{{ repeatability.required_count }}</td></tr>
+          <tr><td>Recorded Spread ($E_{max} - E_{min}$):</td><td class="font-mono font-bold">{{ repeatability.computed_spread }} g</td></tr>
+          <tr><td>Statutory Limit ($|MPE|$):</td><td class="font-mono">&lt;= {{ repeatability.spread_limit }} g</td></tr>
+          <tr><td>Result:</td><td class="font-bold">{% if repeatability.passed %}PASS{% else %}FAIL{% endif %}</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- 5. Accuracy Test Table -->
+  <div class="section-title">5. ACCURACY WEIGHING TEST [A.4.4.1]</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Phase</th>
+        <th>Load $L$ (g)</th>
+        <th>Indication $I$ (g)</th>
+        <th>$\Delta L$ (g)</th>
+        <th>$P$ (g)</th>
+        <th>Error $E$ (g)</th>
+        <th>Corrected $E_c$ (g)</th>
+        <th>$MPE$ (g)</th>
+        <th>Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in accuracy_up %}
+      <tr>
+        <td class="font-bold text-center">UP</td>
+        <td class="font-mono font-bold">{{ r.load_g }}</td>
+        <td class="font-mono">{{ r.indication }}</td>
+        <td class="font-mono">{{ r.delta_l|default:"—" }}</td>
+        <td class="font-mono">{{ r.P|default:"—" }}</td>
+        <td class="font-mono">{{ r.E }}</td>
+        <td class="font-mono font-bold text-right">{{ r.Ec }}</td>
+        <td class="font-mono text-right">±{{ r.mpe }}</td>
+        <td class="text-center font-bold">{% if r.passed %}PASS{% else %}FAIL{% endif %}</td>
+      </tr>
+      {% endfor %}
+      {% for r in accuracy_down %}
+      <tr>
+        <td class="font-bold text-center">DOWN</td>
+        <td class="font-mono font-bold">{{ r.load_g }}</td>
+        <td class="font-mono">{{ r.indication }}</td>
+        <td class="font-mono">{{ r.delta_l|default:"—" }}</td>
+        <td class="font-mono">{{ r.P|default:"—" }}</td>
+        <td class="font-mono">{{ r.E }}</td>
+        <td class="font-mono font-bold text-right">{{ r.Ec }}</td>
+        <td class="font-mono text-right">±{{ r.mpe }}</td>
+        <td class="text-center font-bold">{% if r.passed %}PASS{% else %}FAIL{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- 6. Eccentricity Test -->
+  <div class="section-title">6. ECCENTRIC LOADING TEST [Clause 3.6.2, A.4.7]</div>
+  {% if eccentricity.is_omitted %}
+  <p style="font-size: 8pt; font-style: italic;">Omitted per Clause A.4.7 Note: {{ eccentricity.omission_reason }}</p>
+  {% else %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Receptor Position</th>
+        <th>Applied Test Load</th>
+        <th>Indication (g)</th>
+        <th>Corrected Error $E_c$ (g)</th>
+        <th>Allowed $MPE$ (g)</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for er in eccentricity.readings.all %}
+      <tr>
+        <td class="font-bold">{{ er.position_label }}</td>
+        <td class="font-mono">{{ eccentricity.actual_load_g }} g</td>
+        <td class="font-mono">{{ er.indication }}</td>
+        <td class="font-mono text-right font-bold">{{ er.Ec }}</td>
+        <td class="font-mono text-right">±{{ er.mpe }}</td>
+        <td class="text-center font-bold">{% if er.passed %}PASS{% else %}FAIL{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- Overall Result Banner -->
+  {% if session.overall_result == 'pass' %}
+  <div class="banner-pass">
+    STATUTORY CONCLUSION: PASS — CONFORMS TO OIML R 76-1:2006 SPECIFICATIONS
+  </div>
+  {% else %}
+  <div class="banner-fail">
+    STATUTORY CONCLUSION: FAIL — NON-CONFORMING UNDER OIML R 76-1:2006
+  </div>
+  {% endif %}
+
+  <!-- Remarks & Marking -->
+  <table class="data-table">
+    <tr>
+      <td style="width: 50%;">
+        <strong>Statutory Verification Mark:</strong><br/>
+        {% if session.marking_securing.marks_applied %}
+        Stamp Affixed: {{ session.marking_securing.serial_reference|default:"Official Seal" }} (Due: {{ session.marking_securing.next_due_date|default:"1 Year" }})
+        {% else %}
+        No stamp affixed.
+        {% endif %}
+      </td>
+      <td style="width: 50%;">
+        <strong>Remarks:</strong><br/>
+        {{ session.remarks|default:"None." }}
+      </td>
+    </tr>
+  </table>
+
+  <!-- Signatures -->
+  <div style="margin-top: 15px;">
+    <div class="signature-box">
+      <strong>Testing Officer (Inspector):</strong><br/><br/>
+      <span class="font-bold">{{ session.inspector.get_full_name|default:session.inspector.username }}</span><br/>
+      <span style="font-size: 7.5pt; color: #475569;">{{ session.inspector.profile.designation }}</span><br/>
+      <span style="font-size: 7.5pt; color: #475569;">Date: {{ session.test_date|date:"d M Y" }}</span>
+    </div>
+    <div class="signature-box text-right">
+      <strong>Approving Statutory Authority:</strong><br/><br/>
+      <span class="font-bold">{{ report.approved_by.get_full_name|default:report.approved_by.username }}</span><br/>
+      <span style="font-size: 7.5pt; color: #475569;">{{ report.approved_by.profile.designation }}</span><br/>
+      <span style="font-size: 7.5pt; color: #475569;">Issued: {{ report.issued_at|date:"d M Y" }}</span>
+    </div>
+  </div>
+
+  <!-- Footer Security & Tamper Evidence -->
+  <div class="footer-note">
+    <div><strong>Cryptographic Integrity Signature (SHA-256):</strong> <span class="font-mono" style="font-size: 7pt;">{{ report.snapshot_hash }}</span></div>
+    <div>Verify online: <span class="font-mono">{{ verify_url }}</span> | Notice: This statutory test report is legally invalid if altered.</div>
+  </div>
+
+</body>
+</html>

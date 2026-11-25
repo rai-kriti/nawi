@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Step 5: Eccentricity — Test #{{ session.id }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+  {% include "inspections/wizard_nav.html" with session=session step=step %}
+
+  <form method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {% csrf_token %}
+
+    <div class="lg:col-span-2 space-y-6">
+
+      <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-outline pb-2">
+          <h2 class="text-sm font-bold text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">crop_square</span>
+            <span>Step 5: Eccentric Loading Test [Clause 3.6.2, A.4.7]</span>
+          </h2>
+          <span class="text-xs bg-surface-container-high text-on-surface px-2 py-0.5 rounded font-bold uppercase">
+            {{ ecc_test.get_mode_display }}
+          </span>
+        </div>
+
+        <p class="text-xs text-on-surface-variant leading-relaxed">
+          The indications for different load positions must meet the $MPE$ at the applied test load [3.6.2].
+          Statutory load positions must be marked on a sketch in the test report [A.4.7].
+        </p>
+
+        <!-- Test Load & Omission Controls -->
+        <div class="bg-surface-container-low p-4 rounded-lg border border-outline space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1">Actual Applied Test Load (g) <span class="text-error">*</span></label>
+              <input type="number" step="any" name="actual_load_g" value="{{ ecc_test.actual_load_g }}" required {% if not can_edit %}readonly{% endif %}
+                class="w-40 bg-white border border-outline rounded px-3 py-1.5 text-sm font-mono focus:ring-2 focus:ring-primary"/>
+              <p class="text-[11px] text-on-surface-variant mt-0.5">Required minimum fraction: <strong>{{ ecc_test.required_load_g|floatformat:1 }} g</strong></p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input type="checkbox" name="is_omitted" id="is_omitted" {% if ecc_test.is_omitted %}checked{% endif %}
+                onchange="document.getElementById('omission-box').classList.toggle('hidden', !this.checked)"
+                class="rounded border-slate-300 text-primary focus:ring-primary"/>
+              <label for="is_omitted" class="text-xs font-bold text-on-surface">Omit Eccentricity Test [A.4.7 note]</label>
+            </div>
+          </div>
+
+          <div id="omission-box" class="{% if not ecc_test.is_omitted %}hidden{% endif %} pt-2 border-t border-outline">
+            <label class="block text-xs font-semibold mb-1">Mandatory Statutory Justification for Omission <span class="text-error">*</span></label>
+            <input type="text" name="omission_reason" value="{{ ecc_test.omission_reason }}" placeholder="e.g. Operating conditions and physical guide structure preclude off-centre loading."
+              class="w-full bg-white border border-outline rounded px-3 py-1.5 text-xs"/>
+          </div>
+        </div>
+
+        <!-- Schematic Platform Sketch & Positions -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+          
+          <!-- Visual SVG Receptor Sketch -->
+          <div class="bg-surface-container-low p-4 rounded-lg border border-outline flex flex-col items-center">
+            <span class="text-[11px] font-bold text-primary mb-2">Platform Loading Segments (A.4.7.1)</span>
+            <svg class="w-48 h-48 border-2 border-primary bg-white rounded shadow-inner" viewBox="0 0 200 200">
+              <!-- Grid lines dividing into 4 quarter segments -->
+              <line x1="100" y1="0" x2="100" y2="200" stroke="#d1d5db" stroke-dasharray="4,4" stroke-width="2"/>
+              <line x1="0" y1="100" x2="200" y2="100" stroke="#d1d5db" stroke-dasharray="4,4" stroke-width="2"/>
+              <!-- Position circles -->
+              <circle cx="50" cy="50" r="16" fill="#012357" opacity="0.85"/>
+              <text x="50" y="55" fill="white" font-size="11" font-weight="bold" text-anchor="middle">1</text>
+
+              <circle cx="150" cy="50" r="16" fill="#012357" opacity="0.85"/>
+              <text x="150" y="55" fill="white" font-size="11" font-weight="bold" text-anchor="middle">2</text>
+
+              <circle cx="150" cy="150" r="16" fill="#012357" opacity="0.85"/>
+              <text x="150" y="155" fill="white" font-size="11" font-weight="bold" text-anchor="middle">3</text>
+
+              <circle cx="50" cy="150" r="16" fill="#012357" opacity="0.85"/>
+              <text x="50" y="155" fill="white" font-size="11" font-weight="bold" text-anchor="middle">4</text>
+            </svg>
+            <span class="text-[10px] text-slate-500 mt-2">1: Front-Left • 2: Front-Right • 3: Rear-Right • 4: Rear-Left</span>
+          </div>
+
+          <!-- Position Readings Inputs -->
+          <div class="space-y-3">
+            {% for i in "1234" %}
+            <div class="p-2.5 rounded bg-surface-container-low border border-outline flex items-center justify-between text-xs">
+              <span class="font-bold text-on-surface">Position {{ i }}:</span>
+              <div class="flex items-center gap-2">
+                <input type="number" step="any" name="ind_{{ i }}" required {% if not can_edit %}readonly{% endif %}
+                  placeholder="Indication (g)"
+                  value="{% for r in readings %}{% if forloop.counter|stringformat:'i' == i %}{{ r.indication }}{% endif %}{% endfor %}"
+                  class="w-24 bg-white border border-outline rounded px-2 py-1 font-mono text-xs"/>
+                <input type="number" step="any" name="dl_{{ i }}" placeholder="ΔL" {% if not can_edit %}readonly{% endif %}
+                  value="{% for r in readings %}{% if forloop.counter|stringformat:'i' == i %}{{ r.delta_l|default:'' }}{% endif %}{% endfor %}"
+                  class="w-16 bg-white border border-outline rounded px-2 py-1 font-mono text-xs"/>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Navigation buttons -->
+      <div class="flex items-center justify-between pt-4 border-t border-outline">
+        <a href="{% url 'wizard_step' session_id=session.id step='repeatability' %}" class="text-xs font-bold text-on-surface-variant hover:underline flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>Previous: Step 4 Repeatability</span>
+        </a>
+        {% if can_edit %}
+        <button type="submit" class="bg-primary hover:bg-[#152a50] text-white text-xs font-bold px-6 py-2.5 rounded shadow-sm inline-flex items-center gap-2">
+          <span>Save & Proceed to Step 6: Conditionals</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </button>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right Side Info -->
+    <div class="space-y-4">
+      <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm sticky top-6 space-y-3 text-xs">
+        <h3 class="font-bold text-primary uppercase tracking-wide border-b border-outline pb-2">Statutory Criteria</h3>
+        <p class="leading-relaxed text-on-surface-variant">
+          <strong>OIML R 76-1 [3.6.2]:</strong><br/>
+          Four supports or fewer: <strong>1/3 of Max</strong> placed in turn on each quarter segment.<br/>
+          More than 4 supports: <strong>1/(n-1) of Max</strong> over each support.
+        </p>
+      </div>
+    </div>
+
+  </form>
+
+</div>
+{% endblock %}
+

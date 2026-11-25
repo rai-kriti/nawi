@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Report {{ report.report_number }} — WeighCert{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+  <!-- Header with Actions -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline pb-4 bg-surface-container-lowest p-4 rounded-lg border shadow-sm">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 class="text-xl font-bold text-primary font-mono">{{ report.report_number }}</h1>
+        {% if report.revision > 0 %}
+        <span class="bg-amber-100 text-amber-900 border border-amber-300 text-xs px-2 py-0.5 rounded font-bold">Revision {{ report.revision }}</span>
+        {% endif %}
+        {% include "partials/_status_chip.html" with status=report.status %}
+      </div>
+      <p class="text-xs text-on-surface-variant mt-1">
+        Approved by {{ report.approved_by.get_full_name|default:report.approved_by.username }} on {{ report.issued_at|date:"d M Y, H:i" }} IST
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Download PDF -->
+      <a href="{% url 'report_pdf_download' report_id=report.id %}" class="bg-primary hover:bg-[#152a50] text-white text-xs font-bold px-3.5 py-2 rounded shadow-sm flex items-center gap-1.5 transition-colors">
+        <span class="material-symbols-outlined text-[16px]">download</span>
+        <span>Download PDF</span>
+      </a>
+
+      <!-- Print -->
+      <button type="button" onclick="window.print()" class="bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-xs font-bold px-3 py-2 rounded border border-outline flex items-center gap-1.5 transition-colors">
+        <span class="material-symbols-outlined text-[16px]">print</span>
+        <span>Print Certificate</span>
+      </button>
+
+      <!-- Copy Verification Link -->
+      <button type="button" onclick="navigator.clipboard.writeText('{{ verify_url }}'); alert('Verification URL copied to clipboard: {{ verify_url }}');"
+        class="bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-xs font-bold px-3 py-2 rounded border border-outline flex items-center gap-1.5 transition-colors">
+        <span class="material-symbols-outlined text-[16px]">qr_code</span>
+        <span>Copy QR Link</span>
+      </button>
+
+      <!-- Revise Report (Inspector only) -->
+      {% if user.profile.is_inspector and report.status == 'issued' %}
+      <form method="POST" action="{% url 'test_revise' report_id=report.id %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Create a new revision docket from this issued report? Upon approval, the new report will become Revision {{ report.revision|add:1 }} and this one will be marked Superseded.')"
+          class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3.5 py-2 rounded shadow-sm flex items-center gap-1.5 transition-colors">
+          <span class="material-symbols-outlined text-[16px]">history_edu</span>
+          <span>Create Revision</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- A4 Canvas Sheet Representation -->
+  <div class="bg-slate-300 p-4 sm:p-8 rounded-lg shadow-inner flex justify-center">
+    <div class="bg-white max-w-[800px] w-full p-8 sm:p-12 shadow-2xl rounded-sm border border-slate-400 text-slate-900 font-sans text-xs space-y-4">
+      
+      <!-- Top Tricolor Bar -->
+      <div class="flex flex-col h-[3px] w-full">
+        <div class="h-[1px] bg-[#FF9933]"></div>
+        <div class="h-[1px] bg-white"></div>
+        <div class="h-[1px] bg-[#138808]"></div>
+      </div>
+
+      <!-- Masthead -->
+      <div class="flex items-start justify-between border-b-2 border-primary pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full border border-slate-300 bg-slate-50 flex items-center justify-center font-bold text-xl text-primary">
+            ⚖
+          </div>
+          <div>
+            <div class="text-[11px] font-bold text-primary">भारत सरकार / विधिक माप विज्ञान प्रभाग</div>
+            <div class="text-base font-bold text-primary tracking-tight">Directorate of Legal Metrology, Government of India</div>
+            <div class="text-[10px] text-slate-500">Central Testing Laboratory • OIML R 76-1:2006 Test Report</div>
+          </div>
+        </div>
+        <div class="text-right">
+          {% if qr_code_b64 %}
+          <img src="{{ qr_code_b64 }}" class="w-16 h-16 inline-block border border-slate-200 p-0.5 rounded" alt="QR Code"/>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Report Metadata Strip -->
+      <div class="bg-slate-50 border border-slate-200 p-2.5 rounded text-[11px] flex justify-between">
+        <div><strong>Report No:</strong> <span class="font-mono font-bold">{{ report.report_number }}</span> {% if report.revision > 0 %}(Rev {{ report.revision }}){% endif %}</div>
+        <div><strong>Issued:</strong> {{ report.issued_at|date:"d F Y" }}</div>
+        <div><strong>Type:</strong> {{ session.get_inspection_type_display }}</div>
+      </div>
+
+      <!-- 1. Applicant & Instrument -->
+      <div>
+        <div class="bg-slate-100 px-2 py-1 font-bold text-primary border-l-2 border-primary text-xs uppercase mb-1.5">
+          1. Applicant & Instrument Specifications
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-[11px] bg-white border border-slate-200 p-2.5 rounded">
+          <div><span class="text-slate-500">Owner / Applicant:</span> <strong>{{ owner.name }}</strong></div>
+          <div><span class="text-slate-500">Manufacturer / Make:</span> <strong>{{ instrument.manufacturer }}</strong></div>
+          <div><span class="text-slate-500">Model & Serial:</span> {{ instrument.model }} (SN: <span class="font-mono font-bold">{{ instrument.serial_number }}</span>)</div>
+          <div><span class="text-slate-500">Accuracy Class:</span> <strong class="text-primary">Class {{ instrument.accuracy_class }}</strong></div>
+          <div><span class="text-slate-500">Capacity (Max / Min):</span> <span class="font-mono font-bold">{{ instrument.max_display }} / {{ instrument.min_display }}</span></div>
+          <div><span class="text-slate-500">Intervals (e / d):</span> <span class="font-mono">e={{ instrument.e_display }}, d={{ instrument.d_display }}</span></div>
+        </div>
+      </div>
+
+      <!-- 2. Test Standards Used -->
+      <div>
+        <div class="bg-slate-100 px-2 py-1 font-bold text-primary border-l-2 border-primary text-xs uppercase mb-1.5">
+          2. Standard Test Weights Used (OIML R 111)
+        </div>
+        <table class="w-full text-left text-[11px] border border-slate-200">
+          <thead class="bg-primary text-white">
+            <tr>
+              <th class="py-1 px-2">Weight ID</th>
+              <th class="py-1 px-2">Nominal</th>
+              <th class="py-1 px-2">Class</th>
+              <th class="py-1 px-2">Certificate Number</th>
+              <th class="py-1 px-2">Correction</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for sw in weights %}
+            <tr>
+              <td class="py-1 px-2 font-mono font-bold">{{ sw.weight.label_id }}</td>
+              <td class="py-1 px-2 font-mono">{{ sw.weight.nominal_mass_g }} g</td>
+              <td class="py-1 px-2">Class {{ sw.weight.oiml_class }}</td>
+              <td class="py-1 px-2 font-mono">{{ sw.weight.certificate_number }}</td>
+              <td class="py-1 px-2 font-mono">{{ sw.weight.certified_correction_g }} g</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 3. Accuracy Test Readings -->
+      <div>
+        <div class="bg-slate-100 px-2 py-1 font-bold text-primary border-l-2 border-primary text-xs uppercase mb-1.5">
+          3. Errors of Indication (Accuracy Weighing Test) [A.4.4.1]
+        </div>
+        <table class="w-full text-left text-[10px] border border-slate-200">
+          <thead class="bg-primary text-white">
+            <tr>
+              <th class="py-1 px-2">Phase</th>
+              <th class="py-1 px-2">Load (g)</th>
+              <th class="py-1 px-2">Indication (g)</th>
+              <th class="py-1 px-2">ΔL (g)</th>
+              <th class="py-1 px-2 text-right">Corrected Error $E_c$ (g)</th>
+              <th class="py-1 px-2 text-right">Limit $MPE$ (g)</th>
+              <th class="py-1 px-2 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for r in accuracy_up %}
+            <tr>
+              <td class="py-1 px-2 font-bold text-slate-500">UP</td>
+              <td class="py-1 px-2 font-mono font-bold">{{ r.load_g }}</td>
+              <td class="py-1 px-2 font-mono">{{ r.indication }}</td>
+              <td class="py-1 px-2 font-mono">{{ r.delta_l|default:"—" }}</td>
+              <td class="py-1 px-2 font-mono font-bold text-right">{{ r.Ec }}</td>
+              <td class="py-1 px-2 font-mono text-right">±{{ r.mpe }}</td>
+              <td class="py-1 px-2 text-center font-bold">{% if r.passed %}PASS{% else %}FAIL{% endif %}</td>
+            </tr>
+            {% endfor %}
+            {% for r in accuracy_down %}
+            <tr>
+              <td class="py-1 px-2 font-bold text-slate-500">DOWN</td>
+              <td class="py-1 px-2 font-mono font-bold">{{ r.load_g }}</td>
+              <td class="py-1 px-2 font-mono">{{ r.indication }}</td>
+              <td class="py-1 px-2 font-mono">{{ r.delta_l|default:"—" }}</td>
+              <td class="py-1 px-2 font-mono font-bold text-right">{{ r.Ec }}</td>
+              <td class="py-1 px-2 font-mono text-right">±{{ r.mpe }}</td>
+              <td class="py-1 px-2 text-center font-bold">{% if r.passed %}PASS{% else %}FAIL{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Conclusion Banner -->
+      <div class="p-3 text-center text-xs font-bold rounded {% if session.overall_result == 'pass' %}bg-green-100 text-green-900 border border-green-300{% else %}bg-red-100 text-red-900 border border-red-300{% endif %}">
+        STATUTORY CONCLUSION: {{ session.get_overall_result_display }} — CONFORMS TO OIML R 76-1:2006 SPECIFICATIONS
+      </div>
+
+      <!-- Signatures -->
+      <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-300 text-[11px]">
+        <div>
+          <span class="text-slate-500">Testing Inspector:</span><br/>
+          <strong>{{ session.inspector.get_full_name|default:session.inspector.username }}</strong><br/>
+          <span class="text-[10px] text-slate-400">{{ session.inspector.profile.designation }}</span>
+        </div>
+        <div class="text-right">
+          <span class="text-slate-500">Approving Officer:</span><br/>
+          <strong>{{ report.approved_by.get_full_name|default:report.approved_by.username }}</strong><br/>
+          <span class="text-[10px] text-slate-400">{{ report.approved_by.profile.designation }}</span>
+        </div>
+      </div>
+
+      <!-- Tamper Evidence Footer -->
+      <div class="text-[9px] text-slate-500 border-t border-slate-200 pt-2 font-mono">
+        <div>SHA-256 Hash: {{ report.snapshot_hash }}</div>
+        <div>Verify Online: {{ verify_url }} | This document is cryptographically locked and invalid if altered.</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == "create" %}Create User{% else %}Edit User: {{ target_user.username }}{% endif %} — SysAdmin | WeighCert{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3">
+    <a href="{% url 'sysadmin_dashboard' %}"
+       class="p-2 rounded-lg hover:bg-surface-container border border-outline text-on-surface-variant hover:text-on-surface transition-colors">
+      <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+    </a>
+    <div>
+      <h1 class="text-xl font-bold text-primary flex items-center gap-2">
+        <span class="material-symbols-outlined text-[22px]">{% if mode == "create" %}person_add{% else %}edit{% endif %}</span>
+        {% if mode == "create" %}Create New User{% else %}Edit User: {{ target_user.username }}{% endif %}
+      </h1>
+      <p class="text-sm text-on-surface-variant">
+        {% if mode == "create" %}Fill in all details to register a new user account.{% else %}Update the user's details or reset their password.{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="bg-surface-container-lowest rounded-xl border border-outline shadow-sm overflow-hidden">
+    <form method="post">
+      {% csrf_token %}
+      <div class="p-6 space-y-5">
+
+        <!-- Section: Account Details -->
+        <div class="border-b border-outline pb-4">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-4">Account Information</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {% if mode == "create" %}
+            <!-- Username — only on create -->
+            <div class="sm:col-span-2">
+              <label class="block text-sm font-semibold text-on-surface mb-1">
+                Username <span class="text-error">*</span>
+              </label>
+              <input type="text" name="username" required
+                     value="{{ form_data.username|default:'' }}"
+                     class="w-full border border-outline rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                     placeholder="e.g. inspector_delhi_01">
+              <p class="text-xs text-on-surface-variant mt-1">Used for login. Cannot be changed later.</p>
+            </div>
+            {% endif %}
+
+            <div>
+              <label class="block text-sm font-semibold text-on-surface mb-1">First Name</label>
+              <input type="text" name="first_name"
+                     value="{{ form_data.first_name|default:target_user.first_name|default:'' }}"
+                     class="w-full border border-outline rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                     placeholder="First name">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-on-surface mb-1">Last Name</label>
+              <input type="text" name="last_name"
+                     value="{{ form_data.last_name|default:target_user.last_name|default:'' }}"
+                     class="w-full border border-outline rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                     placeholder="Last name">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-sm font-semibold text-on-surface mb-1">Email</label>
+              <input type="email" name="email"
+                     value="{{ form_data.email|default:target_user.email|default:'' }}"
+                     class="w-full border border-outline rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                     placeholder="official@example.gov.in">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Role & Designation -->
+        <div class="border-b border-outline pb-4">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-4">Role & Identity</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-on-surface mb-1">
+                Role <span class="text-error">*</span>
+              </label>
+              <select name="role" required
+                      class="w-full border border-outline rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white">
+                {% for value, label in roles %}
+                <option value="{{ value }}"
+                  {% if form_data.role == value or target_user.profile.role == value %}selected{% endif %}>
+                  {{ label }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-on-surface mb-1">Official Designation</label>
+              <input type="text" name="designation"
+                     value="{{ form_data.designation|default:target_user.profile.designation|default:'' }}"
+                     class="w-full border border-outline rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                     placeholder="e.g. Assistant Controller of Weights">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-on-surface mb-1">Employee / Badge ID</label>
+              <input type="text" name="employee_id"
+                     value="{{ form_data.employee_id|default:target_user.profile.employee_id|default:'' }}"
+                     class="w-full border border-outline rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                     placeholder="e.g. DLMD/INS/0042">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Password -->
+        <div class="border-b border-outline pb-4">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-1">
+            {% if mode == "create" %}Set Password{% else %}Reset Password (optional){% endif %}
+          </h2>
+          {% if mode == "edit" %}
+          <p class="text-xs text-on-surface-variant mb-4">Leave blank to keep the existing password unchanged.</p>
+          {% endif %}
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-on-surface mb-1">
+                {% if mode == "create" %}Password <span class="text-error">*</span>{% else %}New Password{% endif %}
+              </label>
+              <input type="password" name="password" {% if mode == "create" %}required{% endif %}
+                     class="w-full border border-outline rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                     placeholder="{% if mode == 'create' %}Minimum 8 characters{% else %}Leave blank to keep current{% endif %}">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-on-surface mb-1">
+                Confirm Password {% if mode == "create" %}<span class="text-error">*</span>{% endif %}
+              </label>
+              <input type="password" name="confirm_password" {% if mode == "create" %}required{% endif %}
+                     class="w-full border border-outline rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                     placeholder="Repeat password">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Flags -->
+        <div>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-4">Account Flags</h2>
+          <div class="space-y-3">
+            <label class="flex items-start gap-3 cursor-pointer group">
+              <input type="checkbox" name="must_change_password"
+                     {% if form_data.must_change_password == "on" or target_user.profile.must_change_password %}checked{% elif mode == "create" %}checked{% endif %}
+                     class="mt-0.5 w-4 h-4 rounded border-outline text-primary focus:ring-primary">
+              <span>
+                <span class="text-sm font-semibold text-on-surface">Force password change on next login</span>
+                <span class="block text-xs text-on-surface-variant">The user must set a new password before accessing any page.</span>
+              </span>
+            </label>
+
+            {% if mode == "edit" %}
+            <label class="flex items-start gap-3 cursor-pointer group">
+              <input type="checkbox" name="is_active"
+                     {% if form_data.is_active == "on" or target_user.profile.is_active %}checked{% endif %}
+                     class="mt-0.5 w-4 h-4 rounded border-outline text-primary focus:ring-primary">
+              <span>
+                <span class="text-sm font-semibold text-on-surface">Account active</span>
+                <span class="block text-xs text-on-surface-variant">Uncheck to disable login without deleting the account.</span>
+              </span>
+            </label>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Form Footer -->
+      <div class="bg-surface-container-low px-6 py-4 flex items-center justify-between gap-3 border-t border-outline">
+        <a href="{% url 'sysadmin_dashboard' %}"
+           class="text-sm text-on-surface-variant hover:text-on-surface font-semibold transition-colors">
+          Cancel
+        </a>
+        <button type="submit"
+                class="inline-flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-primary-container transition-colors shadow">
+          <span class="material-symbols-outlined text-[18px]">{% if mode == "create" %}person_add{% else %}save{% endif %}</span>
+          {% if mode == "create" %}Create User{% else %}Save Changes{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

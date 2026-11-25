@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}{{ instrument.instrument_id }} — WeighCert{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto">
+
+  <!-- Header & Actions -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline pb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded bg-primary-container text-white flex items-center justify-center font-bold">
+        <span class="material-symbols-outlined text-2xl">scale</span>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-xl font-bold text-primary">{{ instrument.manufacturer }} {{ instrument.model }}</h1>
+          <span class="bg-surface-container-high text-on-surface px-2 py-0.5 rounded text-xs font-mono font-bold">{{ instrument.instrument_id }}</span>
+          <span class="bg-primary text-white text-[11px] px-2 py-0.5 rounded font-bold uppercase">Class {{ instrument.accuracy_class }}</span>
+        </div>
+        <p class="text-xs text-on-surface-variant mt-0.5">
+          Owner: <strong>{{ instrument.owner.name }}</strong> • Serial Number: <span class="font-mono">{{ instrument.serial_number }}</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      {% if user.profile.is_inspector %}
+      <a href="{% url 'instrument_edit' instrument_id=instrument.instrument_id %}" class="flex items-center gap-1.5 border border-outline bg-surface-container-lowest hover:bg-surface-container-low px-3 py-1.5 rounded text-xs font-bold text-on-surface transition-colors">
+        <span class="material-symbols-outlined text-[16px]">edit</span>
+        <span>Edit Specs</span>
+      </a>
+      <a href="{% url 'wizard_start' %}?instrument={{ instrument.instrument_id }}" class="flex items-center gap-1.5 bg-primary hover:bg-[#152a50] text-white px-4 py-1.5 rounded text-xs font-bold shadow-sm transition-colors">
+        <span class="material-symbols-outlined text-[16px]">play_circle</span>
+        <span>+ Start New Test</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Metrology Characteristics Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Card 1: Key Limits -->
+    <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm space-y-3">
+      <h2 class="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5 border-b border-outline pb-2">
+        <span class="material-symbols-outlined text-[16px]">balance</span>
+        <span>Metrological Characteristics</span>
+      </h2>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-on-surface-variant">Maximum Capacity (Max):</span>
+          <span class="font-mono font-bold text-on-surface">{{ instrument.max_display }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-on-surface-variant">Minimum Capacity (Min):</span>
+          <span class="font-mono font-bold text-on-surface">{{ instrument.min_display }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-on-surface-variant">Verification Interval (e):</span>
+          <span class="font-mono font-bold text-on-surface">{{ instrument.e_display }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-on-surface-variant">Actual Scale Interval (d):</span>
+          <span class="font-mono font-bold text-on-surface">{{ instrument.d_display }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-on-surface-variant">Verification Resolution (n):</span>
+          <span class="font-mono font-bold text-primary">{{ instrument.n|floatformat:0 }} intervals</span>
+        </div>
+        <div class="flex justify-between py-1">
+          <span class="text-on-surface-variant">Indication Type:</span>
+          <span class="font-bold text-on-surface">{{ instrument.get_indication_type_display }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Receptor & Operational Details -->
+    <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm space-y-3">
+      <h2 class="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5 border-b border-outline pb-2">
+        <span class="material-symbols-outlined text-[16px]">precision_manufacturing</span>
+        <span>Receptor & Installation</span>
+      </h2>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-on-surface-variant">Load Receptor Type:</span>
+          <span class="font-bold text-on-surface">{{ instrument.get_load_receptor_type_display }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-on-surface-variant">Support Points:</span>
+          <span class="font-mono font-bold text-on-surface">{{ instrument.points_of_support }} points</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-on-surface-variant">Multi-Interval:</span>
+          <span class="font-bold text-on-surface">{% if instrument.is_multi_interval %}Yes ({{ instrument.ranges.count }} ranges){% else %}No (Single Range){% endif %}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-on-surface-variant">Place of Use:</span>
+          <span class="font-bold text-on-surface">{{ instrument.place_of_use|default:"Fixed Site" }}</span>
+        </div>
+        <div class="flex justify-between py-1">
+          <span class="text-on-surface-variant">Type Approval No.:</span>
+          <span class="font-mono text-on-surface">{{ instrument.type_approval_number|default:"N/A" }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Compliance Checklist -->
+    <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm space-y-3">
+      <h2 class="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5 border-b border-outline pb-2">
+        <span class="material-symbols-outlined text-[16px]">verified</span>
+        <span>OIML R 76-1 Classification Checks</span>
+      </h2>
+      <div class="space-y-2 text-xs">
+        {% if not findings %}
+        <div class="p-3 bg-green-50 border border-green-200 text-green-900 rounded font-semibold text-xs flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px] text-secondary">check_circle</span>
+          <span>Compliant with Table 3 and Clause 3.4.2 criteria.</span>
+        </div>
+        {% else %}
+        {% for f in findings %}
+        <div class="p-2.5 rounded bg-amber-50 border border-amber-300 text-amber-900 text-[11px] space-y-0.5">
+          <div class="font-bold flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px] text-amber-600">warning</span>
+            <span>{{ f.code }} [{{ f.clause }}]</span>
+          </div>
+          <p class="text-[10px]">{{ f.message }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Test History Table -->
+  <div class="bg-surface-container-lowest rounded-lg border border-outline overflow-hidden shadow-sm">
+    <div class="p-4 bg-surface-container-low border-b border-outline flex items-center justify-between">
+      <div>
+        <h2 class="text-sm font-bold text-on-surface">Verification & Statutory Test History</h2>
+        <p class="text-xs text-on-surface-variant">Historical inspection records, approval status, and certificate outputs</p>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-primary text-white font-semibold">
+          <tr>
+            <th class="py-2.5 px-4">Test Date</th>
+            <th class="py-2.5 px-4">Inspection Type</th>
+            <th class="py-2.5 px-4">Inspector</th>
+            <th class="py-2.5 px-4">Overall Result</th>
+            <th class="py-2.5 px-4">Status</th>
+            <th class="py-2.5 px-4">Report Number</th>
+            <th class="py-2.5 px-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline">
+          {% for sess in history %}
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="py-3 px-4 font-mono font-bold">{{ sess.test_date|date:"d M Y" }}</td>
+            <td class="py-3 px-4">{{ sess.get_inspection_type_display }}</td>
+            <td class="py-3 px-4">{{ sess.inspector.get_full_name|default:sess.inspector.username }}</td>
+            <td class="py-3 px-4">
+              {% include "partials/_result_chip.html" with result=sess.overall_result %}
+            </td>
+            <td class="py-3 px-4">
+              {% include "partials/_status_chip.html" with status=sess.status %}
+            </td>
+            <td class="py-3 px-4 font-mono font-bold text-primary">
+              {% if sess.report %}{{ sess.report.report_number }}{% else %}—{% endif %}
+            </td>
+            <td class="py-3 px-4 text-right space-x-2">
+              <a href="{% url 'test_review' session_id=sess.id %}" class="text-primary hover:underline font-bold">Review</a>
+              {% if sess.report %}
+              <span class="text-slate-300">|</span>
+              <a href="{% url 'report_preview' report_id=sess.report.id %}" class="text-secondary hover:underline font-bold">Report</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="py-6 text-center text-on-surface-variant">
+              No verification tests recorded for this scale yet.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

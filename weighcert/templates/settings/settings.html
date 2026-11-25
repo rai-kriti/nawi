@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}Settings & System Administration — WeighCert{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto">
+
+  <!-- Header -->
+  <div class="border-b border-outline pb-4">
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl font-bold text-primary tracking-tight">System Settings & Administration</h1>
+      <span class="bg-primary text-white text-[11px] px-2 py-0.5 rounded font-bold uppercase">Admin Only</span>
+    </div>
+    <p class="text-xs text-on-surface-variant mt-1">
+      Statutory lab configuration, staff account provisioning, report numbering policies, and cryptographic audit log
+    </p>
+  </div>
+
+  <!-- Tabbed Navigation Bar -->
+  <div class="flex items-center gap-2 border-b border-outline overflow-x-auto text-xs font-bold">
+    <a href="?tab=lab" class="px-4 py-2.5 rounded-t border-b-2 transition-colors whitespace-nowrap {% if active_tab == 'lab' %}border-primary text-primary bg-surface-container-low{% else %}border-transparent text-on-surface-variant hover:text-primary{% endif %}">
+      Lab Details
+    </a>
+    <a href="?tab=users" class="px-4 py-2.5 rounded-t border-b-2 transition-colors whitespace-nowrap {% if active_tab == 'users' %}border-primary text-primary bg-surface-container-low{% else %}border-transparent text-on-surface-variant hover:text-primary{% endif %}">
+      Users & Roles ({{ users.count }})
+    </a>
+    <a href="?tab=numbering" class="px-4 py-2.5 rounded-t border-b-2 transition-colors whitespace-nowrap {% if active_tab == 'numbering' %}border-primary text-primary bg-surface-container-low{% else %}border-transparent text-on-surface-variant hover:text-primary{% endif %}">
+      Report Numbering & Policies
+    </a>
+    <a href="?tab=reference" class="px-4 py-2.5 rounded-t border-b-2 transition-colors whitespace-nowrap {% if active_tab == 'reference' %}border-primary text-primary bg-surface-container-low{% else %}border-transparent text-on-surface-variant hover:text-primary{% endif %}">
+      OIML Reference Tables (Read-Only)
+    </a>
+    <a href="?tab=audit" class="px-4 py-2.5 rounded-t border-b-2 transition-colors whitespace-nowrap {% if active_tab == 'audit' %}border-primary text-primary bg-surface-container-low{% else %}border-transparent text-on-surface-variant hover:text-primary{% endif %}">
+      Audit Trail & Hash Chain
+    </a>
+  </div>
+
+  <!-- TAB 1: Lab Details -->
+  {% if active_tab == 'lab' %}
+  <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline shadow-sm max-w-3xl space-y-4">
+    <h2 class="text-sm font-bold text-primary border-b border-outline pb-2">Organization & Testing Laboratory Configuration</h2>
+    <form method="POST" enctype="multipart/form-data" class="space-y-4 text-xs">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save_lab"/>
+
+      <div>
+        <label class="block font-semibold mb-1">Laboratory / Directorate Name <span class="text-error">*</span></label>
+        <input type="text" name="lab_name" value="{{ lab.lab_name }}" required class="w-full border rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary"/>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Official Address</label>
+        <textarea name="address" rows="2" class="w-full border rounded px-3 py-2 text-xs">{{ lab.address }}</textarea>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold mb-1">Statutory Authority Text</label>
+          <input type="text" name="authority_text" value="{{ lab.authority_text }}" class="w-full border rounded px-3 py-2 text-xs"/>
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Accreditation / Authority Number</label>
+          <input type="text" name="accreditation_number" value="{{ lab.accreditation_number }}" class="w-full border rounded px-3 py-2 text-xs font-mono"/>
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Report Footer Statutory Legal Notice</label>
+        <input type="text" name="report_footer_text" value="{{ lab.report_footer_text }}" class="w-full border rounded px-3 py-2 text-xs"/>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Official Seal / Emblem Logo</label>
+        <input type="file" name="logo" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white"/>
+      </div>
+
+      <div class="pt-2">
+        <button type="submit" class="bg-primary hover:bg-[#152a50] text-white font-bold px-5 py-2.5 rounded shadow-sm">
+          Save Laboratory Details
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- TAB 2: Users & Roles -->
+  {% if active_tab == 'users' %}
+  <div class="space-y-6">
+    <!-- Account Provisioning Banner -->
+    <div class="p-3 bg-surface-container-low border border-outline rounded-lg text-xs text-on-surface-variant flex items-center justify-between">
+      <span>
+        <strong>Single-Organization Policy [Section 3.1]:</strong> Accounts are invite-only and created exclusively by the Administrator. Users must change their temporary password on first login.
+      </span>
+      <button type="button" onclick="document.getElementById('create-user-modal').classList.remove('hidden')"
+        class="bg-primary hover:bg-[#152a50] text-white font-bold px-3 py-1.5 rounded flex items-center gap-1.5 whitespace-nowrap">
+        <span class="material-symbols-outlined text-[16px]">person_add</span>
+        <span>+ Provision New User Account</span>
+      </button>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-surface-container-lowest rounded-lg border border-outline overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-primary text-white font-semibold">
+            <tr>
+              <th class="py-2.5 px-4">Name</th>
+              <th class="py-2.5 px-4">Official Email / Username</th>
+              <th class="py-2.5 px-4">Employee ID</th>
+              <th class="py-2.5 px-4">Role</th>
+              <th class="py-2.5 px-4">Designation</th>
+              <th class="py-2.5 px-4">Status</th>
+              <th class="py-2.5 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline">
+            {% for u in users %}
+            <tr class="hover:bg-surface-container-low {% if not u.profile.is_active %}opacity-60 bg-slate-50{% endif %}">
+              <td class="py-3 px-4 font-bold text-on-surface">{{ u.get_full_name|default:u.username }}</td>
+              <td class="py-3 px-4 font-mono">{{ u.username }}</td>
+              <td class="py-3 px-4 font-mono">{{ u.profile.employee_id|default:"—" }}</td>
+              <td class="py-3 px-4">
+                <span class="bg-surface-container-high px-2 py-0.5 rounded font-bold uppercase text-[10px]">
+                  {{ u.profile.get_role_display }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-on-surface-variant">{{ u.profile.designation|default:"Staff" }}</td>
+              <td class="py-3 px-4">
+                {% if u.profile.is_active %}
+                <span class="text-secondary font-bold">Active</span>
+                {% else %}
+                <span class="text-error font-bold">Deactivated</span>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 text-right space-x-2">
+                {% if u != user %}
+                <form method="POST" action="{% url 'toggle_user_active' user_id=u.id %}" class="inline">
+                  {% csrf_token %}
+                  <button type="submit" class="text-xs font-bold {% if u.profile.is_active %}text-error hover:underline{% else %}text-secondary hover:underline{% endif %}">
+                    {% if u.profile.is_active %}Deactivate{% else %}Activate{% endif %}
+                  </button>
+                </form>
+                <span class="text-slate-300">|</span>
+                <form method="POST" action="{% url 'reset_user_password' user_id=u.id %}" class="inline" onsubmit="return confirm('Reset password for {{ u.username }}?')">
+                  {% csrf_token %}
+                  <button type="submit" class="text-xs font-bold text-primary hover:underline">Reset Pwd</button>
+                </form>
+                {% else %}
+                <span class="text-slate-400 font-bold">(You)</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Provision User Account -->
+  <div id="create-user-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-surface-container-lowest max-w-md w-full rounded-lg shadow-xl border border-outline overflow-hidden">
+      <div class="p-4 bg-primary text-white flex items-center justify-between">
+        <h3 class="font-bold text-sm">Provision Staff Account (Invite-Only)</h3>
+        <button type="button" onclick="document.getElementById('create-user-modal').classList.add('hidden')" class="text-white hover:opacity-75 font-bold">✕</button>
+      </div>
+      <form method="POST" class="p-5 space-y-3 text-xs">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_user"/>
+
+        <div>
+          <label class="block font-semibold mb-1">Official Email / Username <span class="text-error">*</span></label>
+          <input type="email" name="username" required placeholder="officer@gov.in" class="w-full border rounded px-3 py-1.5"/>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold mb-1">First Name <span class="text-error">*</span></label>
+            <input type="text" name="first_name" required class="w-full border rounded px-3 py-1.5"/>
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Last Name <span class="text-error">*</span></label>
+            <input type="text" name="last_name" required class="w-full border rounded px-3 py-1.5"/>
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">System Role <span class="text-error">*</span></label>
+          <select name="role" required class="w-full border rounded px-3 py-1.5">
+            <option value="inspector">Inspector (Enters test data & readings)</option>
+            <option value="officer">Officer (Reviews & officially approves)</option>
+            <option value="admin">Admin (System maintenance & user provisioning)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Designation</label>
+          <input type="text" name="designation" placeholder="e.g. Legal Metrology Officer" class="w-full border rounded px-3 py-1.5"/>
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Employee ID</label>
+          <input type="text" name="employee_id" placeholder="e.g. LM-DL-104" class="w-full border rounded px-3 py-1.5"/>
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Temporary Password <span class="text-error">*</span></label>
+          <input type="password" name="temporary_password" required placeholder="Temporary initial password" class="w-full border rounded px-3 py-1.5 font-mono"/>
+          <p class="text-[10px] text-on-surface-variant mt-0.5">User will be forced to set their own password upon first sign-in.</p>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t border-outline">
+          <button type="button" onclick="document.getElementById('create-user-modal').classList.add('hidden')" class="px-3 py-1.5 text-on-surface-variant hover:underline">Cancel</button>
+          <button type="submit" class="bg-primary hover:bg-[#152a50] text-white font-bold px-4 py-1.5 rounded">Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- TAB 3: Report Numbering & Options -->
+  {% if active_tab == 'numbering' %}
+  <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline shadow-sm max-w-2xl space-y-4 text-xs">
+    <h2 class="text-sm font-bold text-primary border-b border-outline pb-2">Report Numbering & Mathematical Tolerances</h2>
+    <form method="POST" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save_lab"/>
+
+      <div>
+        <label class="block font-semibold mb-1">Report Number Prefix <span class="text-error">*</span></label>
+        <input type="text" name="report_number_prefix" value="{{ lab.report_number_prefix }}" required class="w-full border rounded px-3 py-2 font-mono"/>
+        <p class="text-[11px] text-on-surface-variant mt-0.5">Report numbers follow atomic sequence: <code>&lt;PREFIX&gt;/&lt;YEAR&gt;/000001</code></p>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Year Counter Reset Policy</label>
+        <select name="year_reset_policy" class="w-full border rounded px-3 py-2">
+          <option value="calendar" {% if lab.year_reset_policy == 'calendar' %}selected{% endif %}>Calendar Year (Jan 1)</option>
+          <option value="fiscal" {% if lab.year_reset_policy == 'fiscal' %}selected{% endif %}>Fiscal Year (Apr 1)</option>
+          <option value="never" {% if lab.year_reset_policy == 'never' %}selected{% endif %}>Never (Sequential Continuous)</option>
+        </select>
+      </div>
+
+      <div class="p-3 bg-surface-container-low rounded border border-outline">
+        <div class="flex items-start gap-2">
+          <input type="checkbox" name="allow_simplified_error" id="allow_simplified_error" {% if lab.allow_simplified_error %}checked{% endif %} class="rounded mt-0.5"/>
+          <div>
+            <label for="allow_simplified_error" class="font-bold text-on-surface">Allow Simplified Error Calculation ($E = I - L$)</label>
+            <p class="text-[11px] text-on-surface-variant leading-relaxed">
+              When disabled (default standard compliance), the changeover point method ($\Delta L$) is strictly required whenever $d > 0.2e$. If enabled, affected reports will print a mandatory non-elimination disclosure.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="bg-primary hover:bg-[#152a50] text-white font-bold px-5 py-2.5 rounded shadow-sm">
+        Update Numbering & Calculation Policies
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- TAB 4: Reference Tables (Read-Only) -->
+  {% if active_tab == 'reference' %}
+  <div class="space-y-6">
+    <div class="p-3 bg-surface-container-low border border-outline rounded-lg text-xs text-on-surface-variant">
+      <strong>Regulatory Data Source [Section 5.4]:</strong> Reference tables are seeded per rule-set version <strong>{{ rule_set.version_label }}</strong>. They are immutable and read-only to ensure absolute regulatory integrity.
+    </div>
+
+    <!-- Table 3: Classification Limits -->
+    <div class="bg-surface-container-lowest rounded-lg border border-outline overflow-hidden shadow-sm">
+      <div class="p-3 bg-primary text-white font-bold text-xs uppercase">Table 3 — Classification Limits [OIML R 76-1 Clause 3.2]</div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-surface-container-low font-semibold border-b border-outline">
+            <tr>
+              <th class="py-2 px-3">Class</th>
+              <th class="py-2 px-3">Verification Interval e</th>
+              <th class="py-2 px-3 font-mono">$n_{min}$</th>
+              <th class="py-2 px-3 font-mono">$n_{max}$</th>
+              <th class="py-2 px-3">Min Lower Limit</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline font-mono">
+            {% for cl in class_limits %}
+            <tr>
+              <td class="py-2 px-3 font-sans font-bold">Class {{ cl.accuracy_class }}</td>
+              <td class="py-2 px-3">{{ cl.e_min_g }} g ≤ e {% if cl.e_max_g %}≤ {{ cl.e_max_g }} g{% endif %}</td>
+              <td class="py-2 px-3">{{ cl.n_min }}</td>
+              <td class="py-2 px-3">{{ cl.n_max|default:"None" }}</td>
+              <td class="py-2 px-3 font-sans">{{ cl.min_factor }} d</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Table 6: MPE Bands -->
+    <div class="bg-surface-container-lowest rounded-lg border border-outline overflow-hidden shadow-sm">
+      <div class="p-3 bg-primary text-white font-bold text-xs uppercase">Table 6 — Maximum Permissible Errors [Clause 3.5.1]</div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-surface-container-low font-semibold border-b border-outline">
+            <tr>
+              <th class="py-2 px-3">Class</th>
+              <th class="py-2 px-3">Load Range (m in intervals)</th>
+              <th class="py-2 px-3">Verification MPE Factor</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline font-mono">
+            {% for mb in mpe_bands %}
+            <tr>
+              <td class="py-2 px-3 font-sans font-bold">Class {{ mb.accuracy_class }}</td>
+              <td class="py-2 px-3">m ≤ {{ mb.m_upper|default:"Open-ended" }}</td>
+              <td class="py-2 px-3 font-bold text-primary">±{{ mb.factor }} e</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- TAB 5: Audit Log & Cryptographic Chain -->
+  {% if active_tab == 'audit' %}
+  <div class="space-y-4">
+    <div class="flex items-center justify-between p-4 bg-surface-container-low border border-outline rounded-lg text-xs">
+      <div>
+        <span class="font-bold text-on-surface">MongoDB Immutable Audit Log with SHA-256 Hash Chain</span>
+        <p class="text-on-surface-variant text-[11px] mt-0.5">Each log entry cryptographically seals its payload with the preceding block's hash.</p>
+      </div>
+      <button type="button" onclick="verifyChain()" class="bg-primary hover:bg-[#152a50] text-white font-bold px-4 py-2 rounded flex items-center gap-1.5 shadow-sm">
+        <span class="material-symbols-outlined text-[16px]">lock_reset</span>
+        <span>Verify Chain Integrity</span>
+      </button>
+    </div>
+
+    <div id="chain-status" class="hidden p-3 rounded text-xs font-bold"></div>
+
+    <div class="bg-surface-container-lowest rounded-lg border border-outline overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-primary text-white font-semibold">
+            <tr>
+              <th class="py-2 px-3">Timestamp (UTC)</th>
+              <th class="py-2 px-3">User</th>
+              <th class="py-2 px-3">Action</th>
+              <th class="py-2 px-3">Entity Type</th>
+              <th class="py-2 px-3">Entity ID</th>
+              <th class="py-2 px-3">Cryptographic Hash</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline font-mono text-[11px]">
+            {% for log in audit_logs %}
+            <tr class="hover:bg-surface-container-low">
+              <td class="py-2 px-3">{{ log.timestamp|slice:":19" }}</td>
+              <td class="py-2 px-3 font-sans font-bold">{{ log.username }}</td>
+              <td class="py-2 px-3 uppercase font-sans font-bold text-primary">{{ log.action }}</td>
+              <td class="py-2 px-3 font-sans">{{ log.entity_type }}</td>
+              <td class="py-2 px-3">{{ log.entity_id }}</td>
+              <td class="py-2 px-3 text-slate-500 font-mono" title="{{ log.hash }}">{{ log.hash|slice:":16" }}...</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="py-6 text-center text-slate-500 font-sans">No audit events logged in MongoDB yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function verifyChain() {
+      const statusDiv = document.getElementById('chain-status');
+      statusDiv.className = 'p-3 rounded text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300 flex items-center gap-2';
+      statusDiv.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span> Verifying SHA-256 chain...';
+      statusDiv.classList.remove('hidden');
+
+      fetch('/settings/audit/verify/')
+        .then(res => res.json())
+        .then(data => {
+          if (data.valid) {
+            statusDiv.className = 'p-3 rounded text-xs font-bold bg-green-50 text-green-900 border border-green-300 flex items-center gap-2';
+            statusDiv.innerHTML = `<span class="material-symbols-outlined text-[18px] text-secondary">check_circle</span> ${data.message}`;
+          } else {
+            statusDiv.className = 'p-3 rounded text-xs font-bold bg-red-50 text-red-900 border border-red-300 flex items-center gap-2';
+            statusDiv.innerHTML = `<span class="material-symbols-outlined text-[18px] text-error">gavel</span> ${data.message}`;
+          }
+        })
+        .catch(err => {
+          statusDiv.className = 'p-3 rounded text-xs font-bold bg-red-50 text-red-900 border border-red-300';
+          statusDiv.textContent = 'Error connecting to verification endpoint.';
+        });
+    }
+  </script>
+  {% endif %}
+
+</div>
+{% endblock %}
+

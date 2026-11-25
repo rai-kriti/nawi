@@ -1,0 +1,18 @@
+{# Result chip: PASS(green), FAIL(red), INCOMPLETE(amber) #}
+{% if result == 'pass' or result == True %}
+<span class="inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container border border-green-300 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
+  <span class="material-symbols-outlined text-[13px]">check_circle</span>
+  <span>PASS</span>
+</span>
+{% elif result == 'fail' or result == False %}
+<span class="inline-flex items-center gap-1 bg-error-container text-on-error-container border border-red-300 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
+  <span class="material-symbols-outlined text-[13px]">cancel</span>
+  <span>FAIL</span>
+</span>
+{% else %}
+<span class="inline-flex items-center gap-1 bg-tertiary-container text-on-tertiary-container border border-amber-300 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
+  <span class="material-symbols-outlined text-[13px]">timelapse</span>
+  <span>INCOMPLETE</span>
+</span>
+{% endif %}
+

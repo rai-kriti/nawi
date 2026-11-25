@@ -1,0 +1,13 @@
+{# Reusable Bento Stat Card #}
+<div class="bg-surface-container-lowest p-5 rounded-lg border border-outline relative overflow-hidden flex flex-col justify-between shadow-sm">
+  <div class="absolute left-0 top-0 bottom-0 w-1.5 {{ border_color|default:'bg-primary' }}"></div>
+  <div class="flex items-start justify-between mb-2 pl-2">
+    <span class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">{{ title }}</span>
+    <span class="material-symbols-outlined text-[22px] {{ icon_color|default:'text-primary' }}">{{ icon }}</span>
+  </div>
+  <div class="pl-2">
+    <div class="text-3xl font-bold tracking-tight text-on-surface">{{ value }}</div>
+    <div class="text-xs text-on-surface-variant mt-1">{{ subtitle }}</div>
+  </div>
+</div>
+

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In — WeighCert Legal Metrology Portal{% endblock %}
+
+{% block content %}
+<div class="w-full min-h-[75vh] flex items-center justify-center py-8 px-4">
+  <div class="w-full max-w-md bg-surface-container-lowest rounded-lg shadow-md border border-outline overflow-hidden">
+    <div class="h-2 w-full bg-primary-container"></div>
+    <div class="p-6 sm:p-8 flex flex-col">
+      
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="w-14 h-14 bg-surface-container-low rounded-full border border-outline flex items-center justify-center mb-3">
+          <span class="material-symbols-outlined text-primary text-3xl">balance</span>
+        </div>
+        <h1 class="text-2xl font-bold text-primary">Staff Sign In</h1>
+        <p class="text-xs text-on-surface-variant mt-1">Authorized Legal Metrology Officers & Testing Staff Only</p>
+      </div>
+
+      <div class="mb-5 bg-error-container text-on-error-container p-3 rounded-md flex items-start gap-2.5 text-left border border-red-200">
+        <span class="material-symbols-outlined text-error text-[20px] flex-shrink-0 mt-0.5">gavel</span>
+        <p class="text-xs leading-tight font-medium">
+          <strong>NOTICE:</strong> This is an official Government of India system. Unauthorized access is strictly prohibited and punishable under the Information Technology Act 2000 and Legal Metrology Act 2009.
+        </p>
+      </div>
+
+      <form method="POST" class="space-y-4">
+        {% csrf_token %}
+        <div>
+          <label class="block text-xs font-semibold text-on-surface mb-1" for="id_username">
+            Officer ID / Government Email <span class="text-error font-bold">*</span>
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <span class="material-symbols-outlined text-[18px]">badge</span>
+            </span>
+            <input type="text" name="username" id="id_username" required autofocus
+              placeholder="inspector.singh@gov.in or LM-77402"
+              class="w-full bg-surface-container-low border border-outline text-on-surface pl-10 pr-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white"/>
+          </div>
+          <p class="text-[11px] text-on-surface-variant mt-1">Format: Official email ID or Legal Metrology Departmental ID</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-on-surface mb-1" for="id_password">
+            Password <span class="text-error font-bold">*</span>
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <span class="material-symbols-outlined text-[18px]">lock</span>
+            </span>
+            <input type="password" name="password" id="id_password" required
+              placeholder="Enter account password"
+              class="w-full bg-surface-container-low border border-outline text-on-surface pl-10 pr-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white"/>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-primary hover:bg-[#152a50] text-white py-2.5 px-4 rounded text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm">
+          <span class="material-symbols-outlined text-[18px]">lock_open</span>
+          <span>Login to WeighCert Portal</span>
+        </button>
+      </form>
+
+      <div class="mt-6 pt-5 bg-surface-container-low -mx-6 -mb-6 sm:-mx-8 sm:-mb-8 p-5 flex flex-col gap-3 text-center border-t border-outline">
+        <div class="text-left text-xs text-on-surface-variant">
+          <p class="leading-relaxed">
+            <strong class="text-on-surface">Account Access:</strong> There is no public registration. User accounts are provisioned exclusively by the System Administrator in accordance with Section 3.1 of the statutory guidelines.
+          </p>
+        </div>
+        <div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-2 border-t border-slate-200">
+          <span class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px] text-primary">support_agent</span>
+            <span>Helpdesk: <strong>1800-11-4000</strong> (Toll Free)</span>
+          </span>
+          <span class="font-bold text-secondary">GIGW 3.0 / OIML R 76</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+

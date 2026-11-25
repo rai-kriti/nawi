@@ -1,0 +1,61 @@
+{# Wizard horizontal stepper navigation #}
+<div class="bg-surface-container-lowest p-3 rounded-lg border border-outline shadow-sm mb-6">
+  <div class="flex items-center justify-between text-xs font-semibold overflow-x-auto gap-2">
+    
+    <a href="{% url 'wizard_step' session_id=session.id step='conditions' %}"
+       class="flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors whitespace-nowrap {% if step == 'conditions' %}bg-primary text-white font-bold{% else %}text-on-surface-variant hover:bg-surface-container-low{% endif %}">
+      <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] {% if step == 'conditions' %}bg-white text-primary font-bold{% else %}bg-slate-200 text-slate-700{% endif %}">1</span>
+      <span>Conditions & Weights</span>
+    </a>
+
+    <span class="text-slate-300">›</span>
+
+    <a href="{% url 'wizard_step' session_id=session.id step='zero' %}"
+       class="flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors whitespace-nowrap {% if step == 'zero' %}bg-primary text-white font-bold{% else %}text-on-surface-variant hover:bg-surface-container-low{% endif %}">
+      <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] {% if step == 'zero' %}bg-white text-primary font-bold{% else %}bg-slate-200 text-slate-700{% endif %}">2</span>
+      <span>Zero Check</span>
+    </a>
+
+    <span class="text-slate-300">›</span>
+
+    <a href="{% url 'wizard_step' session_id=session.id step='accuracy' %}"
+       class="flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors whitespace-nowrap {% if step == 'accuracy' %}bg-primary text-white font-bold{% else %}text-on-surface-variant hover:bg-surface-container-low{% endif %}">
+      <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] {% if step == 'accuracy' %}bg-white text-primary font-bold{% else %}bg-slate-200 text-slate-700{% endif %}">3</span>
+      <span>Accuracy Test</span>
+    </a>
+
+    <span class="text-slate-300">›</span>
+
+    <a href="{% url 'wizard_step' session_id=session.id step='repeatability' %}"
+       class="flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors whitespace-nowrap {% if step == 'repeatability' %}bg-primary text-white font-bold{% else %}text-on-surface-variant hover:bg-surface-container-low{% endif %}">
+      <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] {% if step == 'repeatability' %}bg-white text-primary font-bold{% else %}bg-slate-200 text-slate-700{% endif %}">4</span>
+      <span>Repeatability</span>
+    </a>
+
+    <span class="text-slate-300">›</span>
+
+    <a href="{% url 'wizard_step' session_id=session.id step='eccentricity' %}"
+       class="flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors whitespace-nowrap {% if step == 'eccentricity' %}bg-primary text-white font-bold{% else %}text-on-surface-variant hover:bg-surface-container-low{% endif %}">
+      <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] {% if step == 'eccentricity' %}bg-white text-primary font-bold{% else %}bg-slate-200 text-slate-700{% endif %}">5</span>
+      <span>Eccentricity</span>
+    </a>
+
+    <span class="text-slate-300">›</span>
+
+    <a href="{% url 'wizard_step' session_id=session.id step='conditional' %}"
+       class="flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors whitespace-nowrap {% if step == 'conditional' %}bg-primary text-white font-bold{% else %}text-on-surface-variant hover:bg-surface-container-low{% endif %}">
+      <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] {% if step == 'conditional' %}bg-white text-primary font-bold{% else %}bg-slate-200 text-slate-700{% endif %}">6</span>
+      <span>Conditionals</span>
+    </a>
+
+    <span class="text-slate-300">›</span>
+
+    <a href="{% url 'wizard_step' session_id=session.id step='remarks' %}"
+       class="flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors whitespace-nowrap {% if step == 'remarks' %}bg-primary text-white font-bold{% else %}text-on-surface-variant hover:bg-surface-container-low{% endif %}">
+      <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] {% if step == 'remarks' %}bg-white text-primary font-bold{% else %}bg-slate-200 text-slate-700{% endif %}">7</span>
+      <span>Remarks & Review</span>
+    </a>
+
+  </div>
+</div>
+

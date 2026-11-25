@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Test Review Docket #{{ session.id }} — WeighCert{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto">
+
+  <!-- Header & Status -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline pb-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-primary tracking-tight">Inspection Review Docket #{{ session.id }}</h1>
+        {% include "partials/_status_chip.html" with status=session.status %}
+      </div>
+      <p class="text-xs text-on-surface-variant mt-1">
+        {{ instrument.manufacturer }} {{ instrument.model }} (SN: <span class="font-mono">{{ instrument.serial_number }}</span>) • Verified by {{ session.inspector.get_full_name|default:session.inspector.username }} on {{ session.test_date|date:"d M Y" }}
+      </p>
+    </div>
+
+    <!-- Action Buttons based on Role & Status -->
+    <div class="flex flex-wrap items-center gap-3">
+      {% if user.profile.is_inspector and session.status in 'draft,returned' %}
+      <a href="{% url 'wizard_step' session_id=session.id step='conditions' %}" class="bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-xs font-bold px-3 py-2 rounded border border-outline flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[16px]">edit</span>
+        <span>Edit Test Data</span>
+      </a>
+      <form method="POST" action="{% url 'test_submit' session_id=session.id %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Are you sure you want to submit this test to the Approving Officer? Data will become locked for editing.')"
+          class="bg-primary hover:bg-[#152a50] text-white text-xs font-bold px-4 py-2 rounded shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">send</span>
+          <span>Submit for Approval</span>
+        </button>
+      </form>
+      {% endif %}
+
+      {% if user.profile.is_officer and session.status == 'submitted' %}
+      <button type="button" onclick="document.getElementById('return-modal').classList.remove('hidden')"
+        class="bg-error-container hover:bg-red-200 text-error border border-red-300 text-xs font-bold px-3 py-2 rounded flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[16px]">reply</span>
+        <span>Return with Comment</span>
+      </button>
+
+      <form method="POST" action="{% url 'test_approve' session_id=session.id %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Officially approve this statutory test? This will atomically generate the unique report number, cryptographic snapshot hash, QR code, and locked PDF certificate.')"
+          class="bg-secondary hover:bg-green-700 text-white text-xs font-bold px-5 py-2 rounded shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">verified</span>
+          <span>Approve & Issue Certificate</span>
+        </button>
+      </form>
+      {% endif %}
+
+      {% if session.status == 'issued' and session.report %}
+      <a href="{% url 'report_preview' report_id=session.report.id %}" class="bg-secondary text-white text-xs font-bold px-4 py-2 rounded shadow-sm flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[16px]">description</span>
+        <span>View Issued Certificate ({{ session.report.report_number }})</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Overall Result Banner -->
+  <div class="p-4 rounded-lg border flex items-center justify-between {% if session.overall_result == 'pass' %}bg-secondary-container text-on-secondary-container border-green-300{% elif session.overall_result == 'fail' %}bg-error-container text-on-error-container border-red-300{% else %}bg-tertiary-container text-on-tertiary-container border-amber-300{% endif %}">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-3xl">
+        {% if session.overall_result == 'pass' %}check_circle{% elif session.overall_result == 'fail' %}cancel{% else %}timelapse{% endif %}
+      </span>
+      <div>
+        <h2 class="text-base font-bold uppercase tracking-wide">Overall Docket Evaluation: {{ session.get_overall_result_display }}</h2>
+        <p class="text-xs">
+          {% if session.overall_result == 'pass' %}
+          All statutory tests (Zero, Accuracy, Repeatability, Eccentricity) conform strictly to OIML R 76-1:2006 MPE tolerances.
+          {% elif session.overall_result == 'fail' %}
+          One or more tests exceeded maximum permissible error thresholds under Table 6.
+          {% else %}
+          Mandatory test steps incomplete or pending entry.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="text-right">
+      <span class="text-xs font-mono font-bold">{{ session.rule_set_version }}</span>
+    </div>
+  </div>
+
+  <!-- Collapsible Test Summary Sections -->
+  <div class="space-y-4">
+
+    <!-- Zero Check Summary -->
+    <details class="bg-surface-container-lowest rounded-lg border border-outline shadow-sm overflow-hidden" open>
+      <summary class="p-3.5 bg-surface-container-low font-bold text-xs text-primary cursor-pointer flex items-center justify-between">
+        <span>Step 2: Accuracy of Zero-Setting ($E_0$)</span>
+        {% include "partials/_result_chip.html" with result=zero_chk.passed %}
+      </summary>
+      <div class="p-4 text-xs space-y-2">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div><span class="text-on-surface-variant">Indication at Zero:</span> <strong class="font-mono">{{ zero_chk.indication_zero }} g</strong></div>
+          <div><span class="text-on-surface-variant">Extra Load Added ($\Delta L$):</span> <strong class="font-mono">{{ zero_chk.delta_l|default:"N/A" }} g</strong></div>
+          <div><span class="text-on-surface-variant">Computed Error $E_0$:</span> <strong class="font-mono text-primary">{{ zero_chk.computed_e0 }} g</strong></div>
+          <div><span class="text-on-surface-variant">Allowed Limit:</span> <strong class="font-mono">±0.25 e</strong></div>
+        </div>
+      </div>
+    </details>
+
+    <!-- Accuracy Test Summary -->
+    <details class="bg-surface-container-lowest rounded-lg border border-outline shadow-sm overflow-hidden" open>
+      <summary class="p-3.5 bg-surface-container-low font-bold text-xs text-primary cursor-pointer flex items-center justify-between">
+        <span>Step 3: Errors of Indication (Accuracy Weighing Test)</span>
+        <span class="text-xs font-mono">{{ acc_readings.count }} total loading steps</span>
+      </summary>
+      <div class="p-4 text-xs overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-primary text-white font-semibold">
+            <tr>
+              <th class="py-1.5 px-3">Phase</th>
+              <th class="py-1.5 px-3">#</th>
+              <th class="py-1.5 px-3">Load $L$ (g)</th>
+              <th class="py-1.5 px-3">Indication $I$ (g)</th>
+              <th class="py-1.5 px-3">$\Delta L$ (g)</th>
+              <th class="py-1.5 px-3 text-right">Corrected Error $E_c$ (g)</th>
+              <th class="py-1.5 px-3 text-right">Limit $MPE$ (g)</th>
+              <th class="py-1.5 px-3 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline">
+            {% for r in acc_readings %}
+            <tr class="hover:bg-surface-container-low">
+              <td class="py-2 px-3 uppercase font-bold text-[10px] text-slate-500">{{ r.phase }}</td>
+              <td class="py-2 px-3 font-mono">{{ r.sequence }}</td>
+              <td class="py-2 px-3 font-mono font-bold">{{ r.load_g }}</td>
+              <td class="py-2 px-3 font-mono">{{ r.indication }}</td>
+              <td class="py-2 px-3 font-mono">{{ r.delta_l|default:"—" }}</td>
+              <td class="py-2 px-3 text-right font-mono font-bold {% if r.passed %}text-on-surface{% else %}text-error{% endif %}">{{ r.Ec }}</td>
+              <td class="py-2 px-3 text-right font-mono text-on-surface-variant">±{{ r.mpe }}</td>
+              <td class="py-2 px-3 text-center">
+                {% include "partials/_result_chip.html" with result=r.passed %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="py-4 text-center text-slate-500">No accuracy readings logged.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- Repeatability Summary -->
+    <details class="bg-surface-container-lowest rounded-lg border border-outline shadow-sm overflow-hidden" open>
+      <summary class="p-3.5 bg-surface-container-low font-bold text-xs text-primary cursor-pointer flex items-center justify-between">
+        <span>Step 4: Repeatability Test</span>
+        {% include "partials/_result_chip.html" with result=rep_test.passed %}
+      </summary>
+      <div class="p-4 text-xs space-y-2">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div><span class="text-on-surface-variant">Test Load:</span> <strong class="font-mono">{{ rep_test.load_g }} g</strong></div>
+          <div><span class="text-on-surface-variant">Cycles Logged:</span> <strong class="font-mono">{{ rep_test.readings.count }} of {{ rep_test.required_count }}</strong></div>
+          <div><span class="text-on-surface-variant">Recorded Spread:</span> <strong class="font-mono text-primary">{{ rep_test.computed_spread }} g</strong></div>
+          <div><span class="text-on-surface-variant">Spread Limit:</span> <strong class="font-mono">≤ {{ rep_test.spread_limit }} g</strong></div>
+        </div>
+      </div>
+    </details>
+
+    <!-- Eccentricity Summary -->
+    <details class="bg-surface-container-lowest rounded-lg border border-outline shadow-sm overflow-hidden" open>
+      <summary class="p-3.5 bg-surface-container-low font-bold text-xs text-primary cursor-pointer flex items-center justify-between">
+        <span>Step 5: Eccentric Loading Test</span>
+        {% include "partials/_result_chip.html" with result=ecc_test.passed %}
+      </summary>
+      <div class="p-4 text-xs space-y-2">
+        {% if ecc_test.is_omitted %}
+        <div class="p-3 bg-slate-50 border border-slate-300 rounded text-slate-700">
+          <strong>Test Omitted with Statutory Reason:</strong> {{ ecc_test.omission_reason }}
+        </div>
+        {% else %}
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
+          <div><span class="text-on-surface-variant">Receptor Mode:</span> <strong>{{ ecc_test.get_mode_display }}</strong></div>
+          <div><span class="text-on-surface-variant">Test Load:</span> <strong class="font-mono">{{ ecc_test.actual_load_g }} g</strong></div>
+          <div><span class="text-on-surface-variant">Positions Tested:</span> <strong class="font-mono">{{ ecc_test.readings.count }}</strong></div>
+          <div><span class="text-on-surface-variant">Result:</span> {% include "partials/_result_chip.html" with result=ecc_test.passed %}</div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead class="bg-primary text-white font-semibold">
+              <tr>
+                <th class="py-1 px-3">Position</th>
+                <th class="py-1 px-3">Indication (g)</th>
+                <th class="py-1 px-3 text-right">Corrected Error $E_c$ (g)</th>
+                <th class="py-1 px-3 text-right">Limit $MPE$ (g)</th>
+                <th class="py-1 px-3 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-outline">
+              {% for er in ecc_test.readings.all %}
+              <tr>
+                <td class="py-1.5 px-3 font-semibold">{{ er.position_label }}</td>
+                <td class="py-1.5 px-3 font-mono">{{ er.indication }}</td>
+                <td class="py-1.5 px-3 text-right font-mono font-bold">{{ er.Ec }}</td>
+                <td class="py-1.5 px-3 text-right font-mono">±{{ er.mpe }}</td>
+                <td class="py-1.5 px-3 text-center">{% include "partials/_result_chip.html" with result=er.passed %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      </div>
+    </details>
+
+  </div>
+
+</div>
+
+<!-- Modal: Return Test with Mandatory Comment (Officer only) -->
+{% if user.profile.is_officer %}
+<div id="return-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-surface-container-lowest max-w-md w-full rounded-lg shadow-xl border border-outline overflow-hidden">
+    <div class="p-4 bg-error text-white flex items-center justify-between">
+      <h3 class="font-bold text-sm">Return Inspection Docket</h3>
+      <button type="button" onclick="document.getElementById('return-modal').classList.add('hidden')" class="text-white hover:opacity-75 font-bold">✕</button>
+    </div>
+    <form method="POST" action="{% url 'test_return' session_id=session.id %}" class="p-5 space-y-4 text-xs">
+      {% csrf_token %}
+      <p class="text-on-surface-variant">
+        Please specify the exact statutory reason or additional measurements required by the Testing Inspector.
+      </p>
+      <div>
+        <label class="block font-semibold mb-1 text-on-surface">Officer Return Comment <span class="text-error">*</span></label>
+        <textarea name="comment" rows="4" required placeholder="e.g. Please re-run accuracy step at 5,000 g with changeover ΔL verified..."
+          class="w-full border rounded p-2 text-xs focus:ring-2 focus:ring-error"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-outline">
+        <button type="button" onclick="document.getElementById('return-modal').classList.add('hidden')" class="px-3 py-1.5 text-on-surface-variant hover:underline">Cancel</button>
+        <button type="submit" class="bg-error text-white font-bold px-4 py-1.5 rounded">Return to Inspector</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+

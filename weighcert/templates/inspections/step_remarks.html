@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Step 7: Remarks & Finish — Test #{{ session.id }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+  {% include "inspections/wizard_nav.html" with session=session step=step %}
+
+  <form method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {% csrf_token %}
+
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- Marking & Securing -->
+      <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline shadow-sm space-y-4">
+        <h2 class="text-sm font-bold text-primary flex items-center gap-2 border-b border-outline pb-2">
+          <span class="material-symbols-outlined text-[18px]">verified</span>
+          <span>1. Marking and Securing [Clause 7.2, 8.3.4]</span>
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div class="flex items-center gap-2 sm:col-span-2">
+            <input type="checkbox" name="marks_applied" id="marks_applied" value="yes"
+              {% if session.marking_securing.marks_applied %}checked{% endif %} class="rounded"/>
+            <label for="marks_applied" class="font-bold text-on-surface">Verification mark or protective seal affixed to instrument</label>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold mb-1">Mark / Seal Type</label>
+            <select name="mark_type" class="w-full border rounded px-3 py-1.5 text-xs">
+              <option value="stamp" {% if session.marking_securing.mark_type == 'stamp' %}selected{% endif %}>Official Verification Stamp (Lead / Embossed)</option>
+              <option value="sticker" {% if session.marking_securing.mark_type == 'sticker' %}selected{% endif %}>Security Tamper-Evident Hologram Sticker</option>
+              <option value="lead_seal" {% if session.marking_securing.mark_type == 'lead_seal' %}selected{% endif %}>Wire Lead Seal</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold mb-1">Seal / Stamp Serial Reference</label>
+            <input type="text" name="serial_reference" value="{{ session.marking_securing.serial_reference }}" placeholder="e.g. STAMP-DL-2025-0488"
+              class="w-full border rounded px-3 py-1.5 text-xs"/>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold mb-1">Next Periodic Re-verification Due Date</label>
+            <input type="date" name="next_due_date" value="{{ session.marking_securing.next_due_date }}"
+              class="w-full border rounded px-3 py-1.5 text-xs"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Remarks -->
+      <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline shadow-sm space-y-4">
+        <h2 class="text-sm font-bold text-primary flex items-center gap-2 border-b border-outline pb-2">
+          <span class="material-symbols-outlined text-[18px]">edit_note</span>
+          <span>2. Inspector Observations & Remarks</span>
+        </h2>
+
+        <div>
+          <label class="block text-xs font-semibold mb-1">Official Metrological Remarks</label>
+          <textarea name="remarks" rows="4" placeholder="Enter findings, environmental notes, or verification particulars..."
+            class="w-full border rounded p-3 text-xs focus:ring-2 focus:ring-primary">{{ session.remarks }}</textarea>
+        </div>
+      </div>
+
+      <!-- Navigation buttons -->
+      <div class="flex items-center justify-between pt-4 border-t border-outline">
+        <a href="{% url 'wizard_step' session_id=session.id step='conditional' %}" class="text-xs font-bold text-on-surface-variant hover:underline flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>Previous: Step 6</span>
+        </a>
+        <button type="submit" class="bg-primary hover:bg-[#152a50] text-white text-xs font-bold px-6 py-2.5 rounded shadow-sm inline-flex items-center gap-2">
+          <span>Complete Test & View Review Docket</span>
+          <span class="material-symbols-outlined text-[16px]">check_circle</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Right Side Info -->
+    <div class="space-y-4">
+      <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm sticky top-6 space-y-3 text-xs">
+        <h3 class="font-bold text-primary uppercase tracking-wide border-b border-outline pb-2">Final Evaluation</h3>
+        <p class="leading-relaxed text-on-surface-variant">
+          Submitting this step will recompute all compliance parameters using the <strong>pure Python rules engine</strong> and update the overall docket status.
+        </p>
+      </div>
+    </div>
+
+  </form>
+
+</div>
+{% endblock %}
+

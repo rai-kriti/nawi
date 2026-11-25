@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}WeighCert — NAWI Verification & Test Report System (OIML R 76){% endblock %}</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  
+  <!-- Tailwind CSS & Config -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#012357",
+            "primary-container": "#1f3a6e",
+            secondary: "#15803d",
+            "secondary-container": "#dcfce7",
+            "on-secondary-container": "#166534",
+            tertiary: "#d97706",
+            "tertiary-container": "#fef3c7",
+            "on-tertiary-container": "#92400e",
+            error: "#dc2626",
+            "error-container": "#fee2e2",
+            "on-error-container": "#991b1b",
+            surface: "#f7f9fc",
+            "surface-dim": "#d8dadd",
+            "surface-container": "#eceef1",
+            "surface-container-low": "#f2f4f7",
+            "surface-container-high": "#e6e8eb",
+            "surface-container-lowest": "#ffffff",
+            "on-surface": "#111827",
+            "on-surface-variant": "#4b5563",
+            outline: "#d1d5db",
+          },
+          fontFamily: {
+            sans: ["Noto Sans", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- HTMX & Chart.js -->
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { font-family: 'Noto Sans', sans-serif; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .high-contrast { filter: contrast(125%); }
+    .high-contrast body { background: #000 !important; color: #fff !important; }
+    .high-contrast .bg-surface-container-lowest,
+    .high-contrast .bg-surface,
+    .high-contrast .bg-surface-container-low { background: #111 !important; color: #fff !important; border-color: #facc15 !important; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+
+  <!-- National Tricolor Strip (3px) -->
+  <div class="fixed top-0 left-0 right-0 z-50 flex flex-col">
+    <div class="h-[1px] bg-[#FF9933] w-full"></div>
+    <div class="h-[1px] bg-[#FFFFFF] w-full"></div>
+    <div class="h-[1px] bg-[#138808] w-full"></div>
+  </div>
+
+  <!-- GIGW Accessibility Top Strip (36px) -->
+  <div class="bg-[#111827] text-white text-xs py-1.5 px-4 sm:px-8 mt-[3px] z-40">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+      <div class="flex items-center gap-4">
+        <a href="#main-content" class="sr-only focus:not-sr-only focus:px-2 focus:py-1 focus:bg-amber-400 focus:text-black rounded font-semibold">Skip to Main Content</a>
+        <span class="opacity-90 font-medium tracking-wide">भारत सरकार | Government of India</span>
+        <span class="hidden sm:inline opacity-40">|</span>
+        <span class="hidden sm:inline opacity-80">Department of Legal Metrology — OIML R 76</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-1">
+          <span class="opacity-75 mr-1">Text:</span>
+          <button type="button" id="font-dec" class="px-1.5 py-0.5 bg-gray-800 hover:bg-gray-700 rounded font-bold text-xs" title="Decrease font size">A-</button>
+          <button type="button" id="font-norm" class="px-1.5 py-0.5 bg-gray-800 hover:bg-gray-700 rounded font-bold text-xs" title="Default font size">A</button>
+          <button type="button" id="font-inc" class="px-1.5 py-0.5 bg-gray-800 hover:bg-gray-700 rounded font-bold text-xs" title="Increase font size">A+</button>
+        </div>
+        <span class="opacity-40">|</span>
+        <div class="flex items-center bg-gray-800 rounded p-0.5 text-xs">
+          <button type="button" class="px-2 py-0.5 bg-primary text-white rounded font-medium">English</button>
+          <button type="button" class="px-2 py-0.5 text-gray-300 hover:text-white rounded font-medium">हिन्दी</button>
+        </div>
+        <span class="opacity-40">|</span>
+        <button type="button" id="contrast-toggle" class="flex items-center gap-1 px-2 py-0.5 bg-amber-400 text-black hover:bg-amber-300 rounded font-semibold text-xs">
+          <span class="material-symbols-outlined text-[14px]">contrast</span>
+          <span>Contrast</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formal Bilingual Masthead -->
+  <header class="bg-surface-container-lowest shadow-sm py-3 px-4 sm:px-8 border-b border-outline">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <!-- Ashoka Stambh / Legal Metrology Emblem placeholder -->
+        <div class="w-14 h-14 rounded-full border border-outline bg-surface-container-low flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined text-primary text-3xl">balance</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-xs sm:text-sm font-semibold text-primary">भारत सरकार / विधिक माप विज्ञान प्रभाग</span>
+          <span class="text-base sm:text-lg font-bold text-primary tracking-tight">Directorate of Legal Metrology, Government of India</span>
+          <span class="text-xs text-secondary font-semibold uppercase tracking-wider">WeighCert — NAWI Verification & Test Report System (OIML R 76)</span>
+        </div>
+      </div>
+
+      {% if user.is_authenticated %}
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3 bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline">
+          <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+            {{ user.first_name|default:user.username|slice:":1"|upper }}
+          </div>
+          <div class="flex flex-col text-left">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-xs text-on-surface">{{ user.get_full_name|default:user.username }}</span>
+              <span class="text-[10px] bg-primary text-white px-1.5 py-0.2 rounded font-semibold uppercase tracking-wider">
+                {{ user.profile.get_role_display }}
+              </span>
+            </div>
+            <span class="text-[11px] text-on-surface-variant">{{ user.profile.designation|default:"Staff Member" }}</span>
+          </div>
+        </div>
+        <a href="{% url 'logout' %}" class="flex items-center gap-1 text-xs text-error hover:bg-error-container px-2.5 py-1.5 rounded font-semibold transition-colors border border-red-200">
+          <span class="material-symbols-outlined text-[16px]">logout</span>
+          <span>Logout</span>
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- Workspace Container (Sidebar + Main) -->
+  <div class="flex-1 flex flex-col md:flex-row">
+    {% if user.is_authenticated %}
+    <!-- Persistent 280px Administrative Sidebar -->
+    <aside class="w-full md:w-72 bg-primary-container text-white flex-shrink-0 border-r border-[#152a50] flex flex-col justify-between">
+      <div class="py-4">
+        <div class="px-6 pb-3 text-xs font-bold uppercase tracking-wider text-slate-300 border-b border-[#2a457a]">
+          Statutory Navigation
+        </div>
+        <nav class="mt-3 px-3 space-y-1">
+          <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-primary text-white font-bold border-l-4 border-[#FF9933]{% else %}text-slate-200 hover:bg-[#152a50] hover:text-white{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+            <span>Dashboard</span>
+          </a>
+
+          <a href="{% url 'instrument_list' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors {% if 'instruments' in request.path %}bg-primary text-white font-bold border-l-4 border-[#FF9933]{% else %}text-slate-200 hover:bg-[#152a50] hover:text-white{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">scale</span>
+            <span>Instruments</span>
+          </a>
+
+          {% if user.profile.is_inspector %}
+          <a href="{% url 'wizard_start' %}" class="flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-medium transition-colors {% if 'tests' in request.path %}bg-primary text-white font-bold border-l-4 border-[#FF9933]{% else %}text-slate-200 hover:bg-[#152a50] hover:text-white{% endif %}">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-[20px]">assignment_add</span>
+              <span>New Test</span>
+            </div>
+            <span class="text-[10px] bg-secondary text-white px-1.5 py-0.5 rounded font-bold">OIML R 76</span>
+          </a>
+          {% endif %}
+
+          <a href="{% url 'report_archive' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors {% if 'reports' in request.path %}bg-primary text-white font-bold border-l-4 border-[#FF9933]{% else %}text-slate-200 hover:bg-[#152a50] hover:text-white{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">description</span>
+            <span>Reports Archive</span>
+          </a>
+
+          <a href="{% url 'weight_list' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors {% if 'weights' in request.path %}bg-primary text-white font-bold border-l-4 border-[#FF9933]{% else %}text-slate-200 hover:bg-[#152a50] hover:text-white{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">fitness_center</span>
+            <span>Standard Weights</span>
+          </a>
+
+          {% if user.profile.is_admin %}
+          <a href="{% url 'settings' %}" class="flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-medium transition-colors {% if 'settings' in request.path %}bg-primary text-white font-bold border-l-4 border-[#FF9933]{% else %}text-slate-200 hover:bg-[#152a50] hover:text-white{% endif %}">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-[20px]">settings</span>
+              <span>Settings</span>
+            </div>
+            <span class="text-[10px] bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded font-bold">Admin</span>
+          </a>
+          {% endif %}
+
+          {% if user.profile.is_sysadmin %}
+          <a href="{% url 'sysadmin_dashboard' %}" class="flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-medium transition-colors {% if 'sysadmin' in request.path %}bg-primary text-white font-bold border-l-4 border-[#FF9933]{% else %}text-slate-200 hover:bg-[#152a50] hover:text-white{% endif %}">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+              <span>User Management</span>
+            </div>
+            <span class="text-[10px] bg-red-700 text-white px-1.5 py-0.5 rounded font-bold">SYS</span>
+          </a>
+          {% endif %}
+        </nav>
+      </div>
+
+      <!-- Station / Session footer badge -->
+      <div class="p-4 m-3 bg-[#152a50] rounded-lg border border-[#2a457a] text-xs space-y-1 text-slate-300">
+        <div class="flex items-center gap-2 text-white font-semibold">
+          <span class="material-symbols-outlined text-[16px] text-green-400">verified_user</span>
+          <span>Station Active</span>
+        </div>
+        <p class="text-[11px] text-slate-400">{{ lab_settings.lab_name|default:"Directorate of Legal Metrology" }}</p>
+        <p class="text-[11px] text-slate-400">Role: {{ user.profile.get_role_display }}</p>
+      </div>
+    </aside>
+    {% endif %}
+
+    <!-- Main Content Work Area -->
+    <main id="main-content" class="flex-1 p-4 sm:p-6 lg:p-8 bg-surface">
+      <!-- Global Messages -->
+      {% if messages %}
+      <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="p-3 rounded-lg text-sm flex items-center justify-between border {% if message.tags == 'error' %}bg-error-container text-on-error-container border-red-300{% elif message.tags == 'success' %}bg-secondary-container text-on-secondary-container border-green-300{% else %}bg-tertiary-container text-on-tertiary-container border-amber-300{% endif %}">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">
+              {% if message.tags == 'error' %}error{% elif message.tags == 'success' %}check_circle{% else %}info{% endif %}
+            </span>
+            <span>{{ message }}</span>
+          </div>
+          <button type="button" onclick="this.parentElement.remove()" class="text-xs font-bold px-2 py-0.5 hover:opacity-75">✕</button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Global Footer -->
+  <footer class="bg-surface-container-lowest border-t border-outline text-xs text-on-surface-variant py-4 px-6 text-center mt-auto">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span>© 2025 Directorate of Legal Metrology, Government of India. All rights reserved.</span>
+      <span>OIML R 76-1:2006 Compliant | GIGW 3.0 Standard</span>
+    </div>
+  </footer>
+
+  <!-- Basic Accessibility Scripts -->
+  <script>
+    // Font sizing
+    let currentScale = 100;
+    document.getElementById('font-inc')?.addEventListener('click', () => {
+      if (currentScale < 125) { currentScale += 5; document.documentElement.style.fontSize = currentScale + '%'; }
+    });
+    document.getElementById('font-dec')?.addEventListener('click', () => {
+      if (currentScale > 85) { currentScale -= 5; document.documentElement.style.fontSize = currentScale + '%'; }
+    });
+    document.getElementById('font-norm')?.addEventListener('click', () => {
+      currentScale = 100; document.documentElement.style.fontSize = '100%';
+    });
+
+    // Contrast toggle
+    let isHighContrast = false;
+    document.getElementById('contrast-toggle')?.addEventListener('click', () => {
+      isHighContrast = !isHighContrast;
+      document.documentElement.classList.toggle('high-contrast', isHighContrast);
+    });
+
+    // CSRF header for HTMX
+    document.body.addEventListener('htmx:configRequest', (event) => {
+      const match = document.cookie.match(/csrftoken=([^;]+)/);
+      if (match) { event.detail.headers['X-CSRFToken'] = match[1]; }
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Public Certificate Verification — WeighCert{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-8 px-4 space-y-6">
+
+  <!-- Header -->
+  <div class="text-center space-y-2">
+    <div class="w-16 h-16 rounded-full border border-outline bg-surface-container-lowest flex items-center justify-center mx-auto shadow-sm text-primary">
+      <span class="material-symbols-outlined text-4xl">qr_code_scanner</span>
+    </div>
+    <h1 class="text-2xl font-bold text-primary tracking-tight">Statutory Certificate Verification</h1>
+    <p class="text-xs text-on-surface-variant max-w-md mx-auto">
+      Official public registry verification under Section 11 of the Legal Metrology Act and OIML R 76-1
+    </p>
+  </div>
+
+  <!-- Search by Report Number or Code if not tokenized -->
+  {% if not token %}
+  <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline shadow-sm">
+    <form method="POST" class="space-y-3">
+      {% csrf_token %}
+      <label class="block text-xs font-semibold text-on-surface">Enter Report Number or Verification Token:</label>
+      <div class="flex gap-2">
+        <input type="text" name="report_number" placeholder="e.g. WC/DEL/2025/000001 or 48-char token" required
+          class="flex-1 bg-surface-container-low border border-outline rounded px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-primary focus:bg-white"/>
+        <button type="submit" class="bg-primary hover:bg-[#152a50] text-white text-xs font-bold px-4 py-2 rounded">
+          Verify Record
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- Verification Result Card -->
+  {% if queried %}
+    {% if report and integrity_status == 'valid' %}
+    <!-- VALID RECORD (Green Check) -->
+    <div class="bg-surface-container-lowest rounded-lg border-2 border-green-500 shadow-md overflow-hidden">
+      <div class="p-4 bg-green-50 border-b border-green-200 flex items-center gap-3">
+        <span class="material-symbols-outlined text-secondary text-3xl">verified</span>
+        <div>
+          <h2 class="text-sm font-bold text-green-900 uppercase tracking-wide">Authentic Verification Certificate</h2>
+          <p class="text-xs text-green-800">Cryptographically verified against the Department of Legal Metrology central registry.</p>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-4 text-xs">
+        <div class="grid grid-cols-2 gap-3 pb-3 border-b border-outline">
+          <div><span class="text-on-surface-variant">Report Number:</span><br/><strong class="font-mono text-sm text-primary">{{ report.report_number }}</strong></div>
+          <div><span class="text-on-surface-variant">Revision:</span><br/><strong>Revision {{ report.revision }}</strong></div>
+          <div><span class="text-on-surface-variant">Issued On:</span><br/><strong class="font-mono">{{ report.issued_at|date:"d F Y, H:i" }} IST</strong></div>
+          <div><span class="text-on-surface-variant">Issuing Authority:</span><br/><strong>{{ report.approved_by.profile.designation|default:"Directorate of Legal Metrology" }}</strong></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 pb-3 border-b border-outline">
+          <div><span class="text-on-surface-variant">Instrument:</span><br/><strong>{{ report.session.instrument.manufacturer }} {{ report.session.instrument.model }}</strong></div>
+          <div><span class="text-on-surface-variant">Serial Number:</span><br/><strong class="font-mono">{{ report.session.instrument.serial_number }}</strong></div>
+          <div><span class="text-on-surface-variant">Accuracy Class:</span><br/><strong>Class {{ report.session.instrument.accuracy_class }}</strong></div>
+          <div><span class="text-on-surface-variant">Capacity Max / e:</span><br/><strong class="font-mono">{{ report.session.instrument.max_display }} / {{ report.session.instrument.e_display }}</strong></div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2">
+          <div>
+            <span class="text-on-surface-variant">Statutory Result:</span><br/>
+            {% include "partials/_result_chip.html" with result=report.session.overall_result %}
+          </div>
+          <div class="text-right">
+            <span class="text-on-surface-variant">Verification Status:</span><br/>
+            <span class="inline-flex items-center gap-1 text-secondary font-bold">
+              <span class="material-symbols-outlined text-[16px]">lock</span>
+              <span>Integrity Verified Intact</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 bg-surface-container-low border-t border-outline text-center text-[11px] text-slate-500 font-mono">
+        SHA-256 Hash: {{ report.snapshot_hash|slice:":32" }}...
+      </div>
+    </div>
+
+    {% elif report and integrity_status == 'superseded' %}
+    <!-- SUPERSEDED RECORD (Amber Warning) -->
+    <div class="bg-surface-container-lowest rounded-lg border-2 border-amber-400 shadow-md overflow-hidden">
+      <div class="p-4 bg-amber-50 border-b border-amber-200 flex items-center gap-3">
+        <span class="material-symbols-outlined text-amber-600 text-3xl">history</span>
+        <div>
+          <h2 class="text-sm font-bold text-amber-900 uppercase tracking-wide">Notice: Certificate Superseded</h2>
+          <p class="text-xs text-amber-800">This certificate was revised. A newer statutory revision has been officially issued.</p>
+        </div>
+      </div>
+      <div class="p-6 text-xs space-y-3">
+        <p>Report <strong>{{ report.report_number }} (Rev {{ report.revision }})</strong> is no longer the active verification record.</p>
+        <div class="text-on-surface-variant">
+          Original Issue Date: {{ report.issued_at|date:"d M Y" }}<br/>
+          Instrument: {{ report.session.instrument.manufacturer }} (SN: {{ report.session.instrument.serial_number }})
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- NOT FOUND OR ALTERED (Red Alert) -->
+    <div class="bg-surface-container-lowest rounded-lg border-2 border-red-500 shadow-md overflow-hidden">
+      <div class="p-4 bg-red-50 border-b border-red-200 flex items-center gap-3">
+        <span class="material-symbols-outlined text-error text-3xl">gavel</span>
+        <div>
+          <h2 class="text-sm font-bold text-red-900 uppercase tracking-wide">Invalid or Altered Certificate</h2>
+          <p class="text-xs text-red-800">No conforming statutory record matches this verification inquiry.</p>
+        </div>
+      </div>
+      <div class="p-6 text-xs space-y-2 text-on-surface-variant">
+        <p><strong>Warning:</strong> The certificate data entered does not match our cryptographically signed registry or has been tampered with.</p>
+        <p>Please contact the Directorate of Legal Metrology Helpdesk (1800-11-4000) or check the physical seal on the instrument.</p>
+      </div>
+    </div>
+    {% endif %}
+  {% endif %}
+
+</div>
+{% endblock %}

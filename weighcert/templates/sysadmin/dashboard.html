@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}System Administrator — User Management | WeighCert{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+  <!-- Header Row -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="material-symbols-outlined text-[28px] text-primary">admin_panel_settings</span>
+        <h1 class="text-2xl font-bold text-primary">System Administrator Panel</h1>
+      </div>
+      <p class="text-sm text-on-surface-variant">
+        Manage all user accounts. Only you (the System Administrator) can create, edit, or delete users.
+      </p>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+      <a href="{% url 'sysadmin_create_user' %}"
+         class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary-container transition-colors shadow">
+        <span class="material-symbols-outlined text-[18px]">person_add</span>
+        New User
+      </a>
+      <a href="{% url 'sysadmin_change_password' %}"
+         class="inline-flex items-center gap-2 bg-surface-container border border-outline text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-container-high transition-colors">
+        <span class="material-symbols-outlined text-[18px]">key</span>
+        Change Master Key
+      </a>
+      <a href="{% url 'dashboard' %}"
+         class="inline-flex items-center gap-2 text-on-surface-variant border border-outline px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+        Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    {% for label, value, color, icon in stats %}
+    <div class="bg-surface-container-lowest rounded-xl border border-outline p-4 text-center shadow-sm">
+      <span class="material-symbols-outlined text-[22px] {{ color }}">{{ icon }}</span>
+      <p class="text-2xl font-bold text-on-surface tabular-nums mt-1">{{ value }}</p>
+      <p class="text-xs text-on-surface-variant font-medium mt-0.5">{{ label }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Users Table -->
+  <div class="bg-surface-container-lowest rounded-xl border border-outline shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-outline flex items-center gap-2">
+      <span class="material-symbols-outlined text-[20px] text-primary">group</span>
+      <h2 class="text-base font-bold text-on-surface">All Registered Users</h2>
+      <span class="ml-auto text-sm text-on-surface-variant">{{ total }} total</span>
+    </div>
+
+    {% if users %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-surface-container text-on-surface-variant text-xs uppercase tracking-wider">
+          <tr>
+            <th class="px-4 py-3 text-left">User</th>
+            <th class="px-4 py-3 text-left">Role</th>
+            <th class="px-4 py-3 text-left">Designation</th>
+            <th class="px-4 py-3 text-left">Employee ID</th>
+            <th class="px-4 py-3 text-center">Status</th>
+            <th class="px-4 py-3 text-center">Pwd Change</th>
+            <th class="px-4 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline">
+          {% for u in users %}
+          <tr class="hover:bg-surface-container-low transition-colors {% if not u.profile.is_active %}opacity-60{% endif %}">
+            <!-- User Info -->
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                  {{ u.first_name|default:u.username|slice:":1"|upper }}
+                </div>
+                <div>
+                  <p class="font-semibold text-on-surface">{{ u.get_full_name|default:u.username }}</p>
+                  <p class="text-xs text-on-surface-variant font-mono">@{{ u.username }}</p>
+                  {% if u.email %}<p class="text-xs text-on-surface-variant">{{ u.email }}</p>{% endif %}
+                </div>
+              </div>
+            </td>
+
+            <!-- Role Badge -->
+            <td class="px-4 py-3">
+              {% if u.profile.role == "inspector" %}
+                <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-semibold">
+                  <span class="material-symbols-outlined text-[13px]">search</span> Inspector
+                </span>
+              {% elif u.profile.role == "officer" %}
+                <span class="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2.5 py-1 rounded-full font-semibold">
+                  <span class="material-symbols-outlined text-[13px]">gavel</span> Officer
+                </span>
+              {% elif u.profile.role == "admin" %}
+                <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-semibold">
+                  <span class="material-symbols-outlined text-[13px]">manage_accounts</span> Admin
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full font-semibold">
+                  {{ u.profile.get_role_display }}
+                </span>
+              {% endif %}
+            </td>
+
+            <td class="px-4 py-3 text-on-surface-variant">{{ u.profile.designation|default:"—" }}</td>
+            <td class="px-4 py-3 font-mono text-xs text-on-surface-variant">{{ u.profile.employee_id|default:"—" }}</td>
+
+            <!-- Active Status -->
+            <td class="px-4 py-3 text-center">
+              {% if u.profile.is_active %}
+                <span class="inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container text-xs px-2 py-0.5 rounded-full font-semibold">
+                  <span class="material-symbols-outlined text-[13px]">check_circle</span> Active
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1 bg-error-container text-on-error-container text-xs px-2 py-0.5 rounded-full font-semibold">
+                  <span class="material-symbols-outlined text-[13px]">block</span> Inactive
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Must Change Password -->
+            <td class="px-4 py-3 text-center">
+              {% if u.profile.must_change_password %}
+                <span class="material-symbols-outlined text-[18px] text-amber-500" title="Must change password on next login">warning</span>
+              {% else %}
+                <span class="material-symbols-outlined text-[18px] text-green-600" title="Password is set">verified</span>
+              {% endif %}
+            </td>
+
+            <!-- Actions -->
+            <td class="px-4 py-3">
+              <div class="flex items-center justify-end gap-1">
+                <!-- Edit -->
+                <a href="{% url 'sysadmin_edit_user' u.id %}"
+                   class="p-1.5 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors"
+                   title="Edit user">
+                  <span class="material-symbols-outlined text-[18px]">edit</span>
+                </a>
+
+                <!-- Toggle Active -->
+                <form method="post" action="{% url 'sysadmin_toggle_user' u.id %}" class="inline">
+                  {% csrf_token %}
+                  <button type="submit"
+                          class="p-1.5 rounded transition-colors {% if u.profile.is_active %}hover:bg-amber-50 text-amber-600 hover:text-amber-700{% else %}hover:bg-secondary-container text-secondary hover:text-green-700{% endif %}"
+                          title="{% if u.profile.is_active %}Deactivate{% else %}Activate{% endif %}"
+                          onclick="return confirm('{% if u.profile.is_active %}Deactivate {{ u.username }}?{% else %}Activate {{ u.username }}?{% endif %}')">
+                    <span class="material-symbols-outlined text-[18px]">{% if u.profile.is_active %}person_off{% else %}person_check{% endif %}</span>
+                  </button>
+                </form>
+
+                <!-- Delete -->
+                <form method="post" action="{% url 'sysadmin_delete_user' u.id %}" class="inline">
+                  {% csrf_token %}
+                  <button type="submit"
+                          class="p-1.5 rounded hover:bg-error-container text-on-surface-variant hover:text-error transition-colors"
+                          title="Delete user permanently"
+                          onclick="return confirm('PERMANENTLY delete user \'{{ u.username }}\'? This cannot be undone.')">
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-12 text-center text-on-surface-variant">
+      <span class="material-symbols-outlined text-[48px] text-outline">group_off</span>
+      <p class="text-lg font-semibold mt-3">No users yet</p>
+      <p class="text-sm mt-1">Create the first user to get started.</p>
+      <a href="{% url 'sysadmin_create_user' %}"
+         class="inline-flex items-center gap-2 mt-4 bg-primary text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-primary-container transition-colors">
+        <span class="material-symbols-outlined text-[18px]">person_add</span>
+        Create First User
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Sysadmin Info Box -->
+  <div class="bg-tertiary-container border border-amber-300 rounded-xl p-4 text-sm text-on-tertiary-container flex items-start gap-3">
+    <span class="material-symbols-outlined text-[22px] text-amber-700 flex-shrink-0 mt-0.5">shield</span>
+    <div>
+      <p class="font-semibold">System Administrator Privileges</p>
+      <p class="mt-0.5 opacity-80">You are the only System Administrator. You can create, edit, deactivate, or permanently delete any user. 
+      The sysadmin account itself can only be managed via the <code class="font-mono bg-amber-100 px-1 rounded">create_sysadmin</code> management command.</p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
