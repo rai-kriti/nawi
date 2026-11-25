@@ -1,0 +1,8 @@
+Django>=5.2,<7
+django-htmx>=1.2,<2
+whitenoise>=6,<7
+pymongo>=4,<5
+qrcode[pil]>=7,<9
+xhtml2pdf>=0.2,<1
+python-dotenv>=1,<2
+pytest>=8,<10

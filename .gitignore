@@ -62,6 +62,12 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Local project documentation and standards copy
+/flow.txt
+/NAWI_Implementation_Spec.md
+/PROJECT_REPORT.md
+/r076-1-e06.pdf
+
 # Flask stuff:
 instance/
 .webassets-cache
